@@ -10,6 +10,7 @@ import type { Ride } from "../lib/types"
 export default function RidesPage() {
   const { user } = useAuth()
   const [rides, setRides] = useState<Ride[]>([])
+  const [adminCommission, setAdminCommission] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,6 +33,37 @@ export default function RidesPage() {
       .order("ride_date", { ascending: false })
 
     setRides(data || [])
+
+    if (user.role === "admin") {
+      const { data: carsData } = await getSupabase()
+        .from("driver_cars")
+        .select("driver_id")
+        .eq("owner_id", user.id)
+        .eq("active", true)
+
+      if (carsData && carsData.length > 0) {
+        const driverIds = carsData.map((c) => c.driver_id)
+        const { data: driverRides } = await getSupabase()
+          .from("rides")
+          .select("value, commission, type, received_with_client")
+          .in("user_id", driverIds)
+          .eq("type", "passed")
+          .eq("added_by_admin", true)
+          .gte("ride_date", today.toISOString())
+
+        if (driverRides) {
+          const totalCommission = driverRides.reduce((sum, ride) => {
+            if (ride.received_with_client) return sum
+            if (ride.commission) {
+              return sum + (ride.value - ride.commission)
+            }
+            return sum
+          }, 0)
+          setAdminCommission(totalCommission)
+        }
+      }
+    }
+
     setLoading(false)
   }
 
@@ -51,6 +83,7 @@ export default function RidesPage() {
   }
 
   const totalValue = rides.reduce((sum, ride) => sum + getEarnings(ride), 0)
+  const totalWithCommission = totalValue + adminCommission
 
   return (
     <main className="p-4">
@@ -59,8 +92,13 @@ export default function RidesPage() {
         <div className="p-4 bg-taxi-gray-50 rounded-xl">
           <p className="text-sm text-taxi-gray-500">Total</p>
           <p className="text-2xl font-bold text-taxi-success">
-            R$ {totalValue.toFixed(2)}
+            R$ {totalWithCommission.toFixed(2)}
           </p>
+          {user?.role === "admin" && adminCommission > 0 && (
+            <p className="text-xs text-taxi-gray-500 mt-1">
+              Inclui R$ {adminCommission.toFixed(2)} de comissões
+            </p>
+          )}
         </div>
       </div>
 

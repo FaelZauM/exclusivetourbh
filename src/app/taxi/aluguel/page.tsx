@@ -250,7 +250,7 @@ export default function AluguelPage() {
       return 0
     }
     if (ride.type === "passed" && ride.commission) {
-      return ride.value - ride.commission
+      return ride.commission
     }
     return ride.value
   }
@@ -670,8 +670,8 @@ export default function AluguelPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-taxi-success">R$ {ride.commission?.toFixed(2) || ride.value.toFixed(2)}</p>
-                            {ride.commission && (
+                            <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
+                            {ride.commission && !ride.received_with_client && (
                               <p className="text-xs text-taxi-gray-500">
                                 Total: R$ {ride.value.toFixed(2)}
                               </p>
