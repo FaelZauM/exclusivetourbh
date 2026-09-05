@@ -5,9 +5,10 @@ import type { Ride } from "../lib/types"
 interface RideListProps {
   rides: Ride[]
   onDelete: (id: string) => void
+  isAdmin?: boolean
 }
 
-export function RideList({ rides, onDelete }: RideListProps) {
+export function RideList({ rides, onDelete, isAdmin = false }: RideListProps) {
   if (rides.length === 0) {
     return (
       <p className="text-center text-taxi-gray-500 py-8">
@@ -38,6 +39,9 @@ export function RideList({ rides, onDelete }: RideListProps) {
                   {ride.type === "own" ? "Própria" : "Passada"}
                 </span>
               </div>
+              <p className="text-xs text-taxi-gray-500 mt-1">
+                {new Date(ride.ride_date).toLocaleDateString("pt-BR")} {new Date(ride.ride_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </p>
               {ride.start_location && ride.end_location && (
                 <p className="text-sm text-taxi-gray-500 mt-1">
                   {ride.start_location} → {ride.end_location}
@@ -58,7 +62,7 @@ export function RideList({ rides, onDelete }: RideListProps) {
               <p className="font-bold text-taxi-success">
                 R$ {getEarnings(ride).toFixed(2)}
               </p>
-              {ride.type === "passed" && ride.commission && (
+              {isAdmin && ride.type === "passed" && ride.commission && (
                 <p className="text-xs text-taxi-gray-500">
                   Total: R$ {ride.value.toFixed(2)} | Motorista: R$ {ride.commission.toFixed(2)}
                 </p>

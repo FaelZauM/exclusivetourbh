@@ -20,9 +20,11 @@ export function RideForm({ onSuccess }: RideFormProps) {
   const [dispatcherName, setDispatcherName] = useState("")
   const [startLocation, setStartLocation] = useState("")
   const [endLocation, setEndLocation] = useState("")
+  const [rideDate, setRideDate] = useState("")
+  const [rideTime, setRideTime] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const showLocations = ["cooperative", "private", "invoiced", "passed"].includes(category)
+  const showLocations = ["cooperative", "private", "invoiced"].includes(category)
   const showCommission = type === "passed"
   const showDispatcher = category === "cooperative"
 
@@ -31,6 +33,10 @@ export function RideForm({ onSuccess }: RideFormProps) {
     if (!user) return
 
     setLoading(true)
+
+    const rideDateTime = rideDate && rideTime 
+      ? new Date(`${rideDate}T${rideTime}`).toISOString()
+      : new Date().toISOString()
 
     const { error } = await getSupabase().from("rides").insert({
       user_id: user.id,
@@ -43,7 +49,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
       dispatcher_name: showDispatcher ? dispatcherName : null,
       start_location: showLocations ? startLocation : null,
       end_location: showLocations ? endLocation : null,
-      ride_date: new Date().toISOString(),
+      ride_date: rideDateTime,
     })
 
     setLoading(false)
@@ -64,6 +70,8 @@ export function RideForm({ onSuccess }: RideFormProps) {
     setDispatcherName("")
     setStartLocation("")
     setEndLocation("")
+    setRideDate("")
+    setRideTime("")
   }
 
   return (
@@ -104,6 +112,27 @@ export function RideForm({ onSuccess }: RideFormProps) {
           <option value="private">Particular</option>
           <option value="invoiced">Faturado</option>
         </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Data</label>
+          <input
+            type="date"
+            value={rideDate}
+            onChange={(e) => setRideDate(e.target.value)}
+            className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Hora</label>
+          <input
+            type="time"
+            value={rideTime}
+            onChange={(e) => setRideTime(e.target.value)}
+            className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+          />
+        </div>
       </div>
 
       <div>
