@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import type { Ride, User, Fuel, RideCategory, Goal, DriverGoal } from "../lib/types"
+import type { Ride, User, Fuel, RideCategory } from "../lib/types"
 
 function getCategoryLabel(category: RideCategory): string {
   const labels: Record<RideCategory, string> = {
@@ -25,6 +25,7 @@ export default function HistoricoPage() {
   const [loading, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [typeFilter, setTypeFilter] = useState<"all" | "own" | "passed">("all")
   const [weeklyGoal, setWeeklyGoal] = useState(1000)
   const [monthlyGoal, setMonthlyGoal] = useState(4000)
@@ -163,9 +164,20 @@ export default function HistoricoPage() {
     return driver?.nome || "Desconhecido"
   }
 
+  const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate()
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+
   const filteredRides = rides.filter((r) => {
-    if (typeFilter === "own") return r.user_id === user?.id
-    if (typeFilter === "passed") return r.user_id !== user?.id || r.type === "passed"
+    if (typeFilter === "own") {
+      if (r.user_id !== user?.id) return false
+    }
+    if (typeFilter === "passed") {
+      if (r.user_id === user?.id && r.type !== "passed") return false
+    }
+    if (selectedDay !== null) {
+      const rideDate = new Date(r.ride_date)
+      if (rideDate.getDate() !== selectedDay) return false
+    }
     return true
   })
 
@@ -204,7 +216,10 @@ export default function HistoricoPage() {
       <div className="flex gap-2 mb-4">
         <select
           value={selectedMonth}
-          onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+          onChange={(e) => {
+            setSelectedMonth(parseInt(e.target.value))
+            setSelectedDay(null)
+          }}
           className="flex-1 px-4 py-3 border border-taxi-gray-200 rounded-xl"
         >
           {monthNames.map((name, index) => (
@@ -213,13 +228,44 @@ export default function HistoricoPage() {
         </select>
         <select
           value={selectedYear}
-          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+          onChange={(e) => {
+            setSelectedYear(parseInt(e.target.value))
+            setSelectedDay(null)
+          }}
           className="w-24 px-4 py-3 border border-taxi-gray-200 rounded-xl"
         >
           {years.map((year) => (
             <option key={year} value={year}>{year}</option>
           ))}
         </select>
+      </div>
+
+      <div className="mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <button
+            onClick={() => setSelectedDay(null)}
+            className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedDay === null
+                ? "bg-taxi-gray-900 text-white"
+                : "bg-taxi-gray-100 text-taxi-gray-600"
+            }`}
+          >
+            Todos
+          </button>
+          {daysArray.map((day) => (
+            <button
+              key={day}
+              onClick={() => setSelectedDay(day)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                selectedDay === day
+                  ? "bg-taxi-gray-900 text-white"
+                  : "bg-taxi-gray-100 text-taxi-gray-600"
+              }`}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex gap-2 mb-6">
