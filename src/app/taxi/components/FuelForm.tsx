@@ -14,6 +14,7 @@ export function FuelForm({ onSuccess }: FuelFormProps) {
   const [totalValue, setTotalValue] = useState("")
   const [kmStart, setKmStart] = useState("")
   const [kmEnd, setKmEnd] = useState("")
+  const [fuelDate, setFuelDate] = useState(new Date().toISOString().split("T")[0])
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -24,7 +25,7 @@ export function FuelForm({ onSuccess }: FuelFormProps) {
 
     const { error } = await getSupabase().from("fuel").insert({
       user_id: user.id,
-      fuel_date: new Date().toISOString(),
+      fuel_date: new Date(fuelDate + "T12:00:00").toISOString(),
       liters: liters ? parseFloat(liters) : null,
       total_value: parseFloat(totalValue),
       km_start: kmStart ? parseFloat(kmStart) : null,
@@ -44,11 +45,23 @@ export function FuelForm({ onSuccess }: FuelFormProps) {
     setTotalValue("")
     setKmStart("")
     setKmEnd("")
+    setFuelDate(new Date().toISOString().split("T")[0])
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-taxi-gray-50 rounded-xl">
       <h3 className="font-semibold">Registrar Combustível</h3>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Data</label>
+        <input
+          type="date"
+          value={fuelDate}
+          onChange={(e) => setFuelDate(e.target.value)}
+          className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+          required
+        />
+      </div>
 
       <div>
         <label className="block text-sm font-medium mb-1">Valor Total (R$)</label>
