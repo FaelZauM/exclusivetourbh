@@ -6,9 +6,11 @@ interface RideListProps {
   rides: Ride[]
   onDelete: (id: string) => void
   isAdmin?: boolean
+  currentUserId?: string
+  drivers?: { id: string; nome: string }[]
 }
 
-export function RideList({ rides, onDelete, isAdmin = false }: RideListProps) {
+export function RideList({ rides, onDelete, isAdmin = false, currentUserId, drivers = [] }: RideListProps) {
   if (rides.length === 0) {
     return (
       <p className="text-center text-taxi-gray-500 py-8">
@@ -22,6 +24,12 @@ export function RideList({ rides, onDelete, isAdmin = false }: RideListProps) {
       return ride.commission
     }
     return ride.value
+  }
+
+  function getDriverName(userId: string): string {
+    if (currentUserId === userId) return "Você"
+    const driver = drivers.find((d) => d.id === userId)
+    return driver?.nome || "Desconhecido"
   }
 
   return (
@@ -38,6 +46,11 @@ export function RideList({ rides, onDelete, isAdmin = false }: RideListProps) {
                 <span className="text-xs text-taxi-gray-500">
                   {ride.type === "own" ? "Própria" : "Passada"}
                 </span>
+                {ride.user_id !== currentUserId && (
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                    👤 {getDriverName(ride.user_id)}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-taxi-gray-500 mt-1">
                 {new Date(ride.ride_date).toLocaleDateString("pt-BR")} {new Date(ride.ride_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}

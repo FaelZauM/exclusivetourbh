@@ -5,11 +5,12 @@ import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { RideForm } from "../components/RideForm"
 import { RideList } from "../components/RideList"
-import type { Ride } from "../lib/types"
+import type { Ride, User } from "../lib/types"
 
 export default function RidesPage() {
   const { user } = useAuth()
   const [rides, setRides] = useState<Ride[]>([])
+  const [drivers, setDrivers] = useState<User[]>([])
   const [adminCommission, setAdminCommission] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -25,14 +26,39 @@ export default function RidesPage() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const { data } = await getSupabase()
+    const { data: myRides } = await getSupabase()
       .from("rides")
       .select("*")
       .eq("user_id", user.id)
       .gte("ride_date", today.toISOString())
       .order("ride_date", { ascending: false })
 
-    setRides(data || [])
+    let allRides = myRides || []
+
+    if (user.role === "admin") {
+      const { data: carsData } = await getSupabase()
+        .from("driver_cars")
+        .select("driver_id")
+        .eq("owner_id", user.id)
+        .eq("active", true)
+
+      if (carsData && carsData.length > 0) {
+        const driverIds = carsData.map((c) => c.driver_id)
+        const { data: driverRides } = await getSupabase()
+          .from("rides")
+          .select("*")
+          .in("user_id", driverIds)
+          .gte("ride_date", today.toISOString())
+          .order("ride_date", { ascending: false })
+
+        if (driverRides) {
+          allRides = [...allRides, ...driverRides]
+          allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
+        }
+      }
+    }
+
+    setRides(allRides)
 
     if (user.role === "admin") {
       const { data: carsData } = await getSupabase()
@@ -61,6 +87,13 @@ export default function RidesPage() {
           }, 0)
           setAdminCommission(totalCommission)
         }
+
+        const { data: driversData } = await getSupabase()
+          .from("users")
+          .select("*")
+          .in("id", driverIds)
+
+        setDrivers(driversData || [])
       }
     }
 
@@ -108,7 +141,12 @@ export default function RidesPage() {
         {loading ? (
           <p className="text-center text-taxi-gray-500">Carregando...</p>
         ) : (
-          <RideList rides={rides} onDelete={handleDelete} />
+          <RideList 
+            rides={rides} 
+            onDelete={handleDelete} 
+            currentUserId={user?.id}
+            drivers={drivers}
+          />
         )}
       </div>
     </main>
