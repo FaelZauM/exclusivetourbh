@@ -47,5 +47,12 @@ export interface Goal {
   updated_at: string
 }
 
+export interface DriverGoal {
+  id: string
+  user_id: string
+  personal_goal: number
+  updated_at: string
+}
+
 export type RideCategory = "app" | "taximeter" | "cooperative" | "private" | "invoiced"
 export type RideType = "own" | "passed"
