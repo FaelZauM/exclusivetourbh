@@ -53,6 +53,8 @@ export default function RidesPage() {
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
 
     let allRides: Ride[] = []
 
@@ -61,6 +63,8 @@ export default function RidesPage() {
         .from("rides")
         .select("*")
         .eq("user_id", user.id)
+        .gte("ride_date", today.toISOString())
+        .lt("ride_date", tomorrow.toISOString())
         .order("ride_date", { ascending: false })
 
       allRides = myRides || []
@@ -85,6 +89,8 @@ export default function RidesPage() {
           .from("rides")
           .select("*")
           .in("user_id", driverIds)
+          .gte("ride_date", today.toISOString())
+          .lt("ride_date", tomorrow.toISOString())
           .order("ride_date", { ascending: false })
 
         if (driverRides) {
@@ -96,28 +102,14 @@ export default function RidesPage() {
         .from("rides")
         .select("*")
         .eq("user_id", user.id)
+        .gte("ride_date", today.toISOString())
+        .lt("ride_date", tomorrow.toISOString())
         .order("ride_date", { ascending: false })
 
       allRides = myRides || []
     }
 
-    allRides.sort((a, b) => {
-      const dateA = new Date(a.ride_date).getTime()
-      const dateB = new Date(b.ride_date).getTime()
-      const todayTime = today.getTime()
-      
-      const aIsFuture = dateA >= todayTime
-      const bIsFuture = dateB >= todayTime
-      const aIsToday = dateA >= todayTime && dateA < todayTime + 86400000
-      const bIsToday = dateB >= todayTime && dateB < todayTime + 86400000
-
-      if (aIsFuture && !bIsFuture) return -1
-      if (!aIsFuture && bIsFuture) return 1
-      if (aIsToday && !bIsToday) return -1
-      if (!aIsToday && bIsToday) return 1
-      
-      return dateB - dateA
-    })
+    allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
 
     setRides(allRides)
     setLoading(false)
