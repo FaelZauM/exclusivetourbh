@@ -28,6 +28,13 @@ export default function AluguelPage() {
   const [endDay, setEndDay] = useState("14")
   const [goalValue, setGoalValue] = useState("")
 
+  // Ride form states
+  const [showAddRide, setShowAddRide] = useState(false)
+  const [rideCategory, setRideCategory] = useState<"app" | "taximeter" | "cooperative" | "private" | "invoiced">("app")
+  const [rideValue, setRideValue] = useState("")
+  const [rideCommission, setRideCommission] = useState("")
+  const [rideDriverName, setRideDriverName] = useState("")
+
   useEffect(() => {
     if (user) {
       fetchData()
@@ -182,6 +189,33 @@ export default function AluguelPage() {
 
     setSelectedCar(null)
     fetchData()
+  }
+
+  async function handleAddRideForDriver(e: React.FormEvent) {
+    e.preventDefault()
+    if (!selectedCar) return
+
+    const car = myCars.find((c) => c.id === selectedCar)
+    if (!car) return
+
+    const { error } = await getSupabase().from("rides").insert({
+      user_id: car.driver_id,
+      type: "passed",
+      category: rideCategory,
+      value: parseFloat(rideValue),
+      commission: rideCommission ? parseFloat(rideCommission) : null,
+      driver_name: rideDriverName || null,
+      ride_date: new Date().toISOString(),
+      added_by_admin: true,
+    })
+
+    if (!error) {
+      setRideValue("")
+      setRideCommission("")
+      setRideDriverName("")
+      setShowAddRide(false)
+      fetchCarData()
+    }
   }
 
   if (user?.role !== "admin") {
@@ -466,7 +500,76 @@ export default function AluguelPage() {
               </div>
 
               <div className="mb-6">
-                <h3 className="font-semibold mb-3">Corridas do Período</h3>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-semibold">Corridas do Período</h3>
+                  <button
+                    onClick={() => setShowAddRide(!showAddRide)}
+                    className="text-sm text-taxi-primary font-medium"
+                  >
+                    {showAddRide ? "Cancelar" : "+ Nova Corrida"}
+                  </button>
+                </div>
+
+                {showAddRide && (
+                  <form onSubmit={handleAddRideForDriver} className="space-y-4 p-4 bg-taxi-gray-50 rounded-xl mb-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Categoria</label>
+                      <select
+                        value={rideCategory}
+                        onChange={(e) => setRideCategory(e.target.value as any)}
+                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                        required
+                      >
+                        <option value="app">App (Uber, 99, InDrive)</option>
+                        <option value="taximeter">Taxímetro</option>
+                        <option value="cooperative">Cooperativa</option>
+                        <option value="private">Particular</option>
+                        <option value="invoiced">Faturado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Valor Total (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={rideValue}
+                        onChange={(e) => setRideValue(e.target.value)}
+                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Valor do Motorista (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={rideCommission}
+                        onChange={(e) => setRideCommission(e.target.value)}
+                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                        required
+                      />
+                      <p className="text-xs text-taxi-gray-500 mt-1">
+                        Sua comissão: R$ {rideValue && rideCommission ? (parseFloat(rideValue) - parseFloat(rideCommission)).toFixed(2) : "0.00"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Motorista (opcional)</label>
+                      <input
+                        type="text"
+                        value={rideDriverName}
+                        onChange={(e) => setRideDriverName(e.target.value)}
+                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-taxi-success text-white font-medium rounded-xl hover:bg-opacity-90"
+                    >
+                      Adicionar Corrida
+                    </button>
+                  </form>
+                )}
+
                 {carRides.length === 0 ? (
                   <p className="text-center text-taxi-gray-500 py-4">Nenhuma corrida registrada.</p>
                 ) : (
@@ -482,7 +585,14 @@ export default function AluguelPage() {
                             {new Date(ride.ride_date).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
-                        <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
+                        <div className="text-right">
+                          <p className="font-bold text-taxi-success">R$ {ride.commission?.toFixed(2) || ride.value.toFixed(2)}</p>
+                          {ride.commission && (
+                            <p className="text-xs text-taxi-gray-500">
+                              Total: R$ {ride.value.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

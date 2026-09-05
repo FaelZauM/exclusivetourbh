@@ -42,7 +42,7 @@ export default function RidesPage() {
 
   function getEarnings(ride: Ride): number {
     if (ride.type === "passed" && ride.commission) {
-      return ride.value - ride.commission
+      return ride.commission
     }
     return ride.value
   }

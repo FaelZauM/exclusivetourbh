@@ -20,6 +20,7 @@ export interface Ride {
   end_location?: string
   ride_date: string
   created_at: string
+  added_by_admin?: boolean
 }
 
 export interface Fuel {
