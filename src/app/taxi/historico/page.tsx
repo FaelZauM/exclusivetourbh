@@ -4,7 +4,16 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import type { Ride, User, Fuel } from "../lib/types"
+import type { Ride, User, Fuel, RideCategory } from "../lib/types"
+
+function getCategoryLabel(category: RideCategory): string {
+  const labels: Record<RideCategory, string> = {
+    particular: "Particular",
+    cooperative: "Cooperativa",
+    invoiced: "Faturado",
+  }
+  return labels[category] || category
+}
 
 export default function HistoricoPage() {
   const { user } = useAuth()
@@ -252,9 +261,9 @@ export default function HistoricoPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">{ride.category}</span>
+                          <span className="font-semibold">{getCategoryLabel(ride.category)}</span>
                           <span className="text-xs text-taxi-gray-500">
-                            {ride.type === "own" ? "Própria" : "Passada"}
+                            {ride.type === "own" ? "Particular" : "Passada"}
                           </span>
                           {ride.user_id !== user?.id && (
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
@@ -262,6 +271,11 @@ export default function HistoricoPage() {
                             </span>
                           )}
                         </div>
+                        {ride.company_name && (
+                          <p className="text-sm text-taxi-gray-500 mt-1">
+                            Empresa: {ride.company_name}
+                          </p>
+                        )}
                         {ride.passenger_name && (
                           <p className="text-sm text-taxi-gray-500 mt-1">
                             Passageiro: {ride.passenger_name}

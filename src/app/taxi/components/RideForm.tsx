@@ -12,11 +12,12 @@ interface RideFormProps {
 export function RideForm({ onSuccess }: RideFormProps) {
   const { user } = useAuth()
   const [type, setType] = useState<RideType>("own")
-  const [category, setCategory] = useState<RideCategory>("app")
+  const [category, setCategory] = useState<RideCategory>("particular")
   const [value, setValue] = useState("")
   const [commission, setCommission] = useState("")
   const [driverName, setDriverName] = useState("")
   const [passengerName, setPassengerName] = useState("")
+  const [companyName, setCompanyName] = useState("")
   const [dispatcherName, setDispatcherName] = useState("")
   const [startLocation, setStartLocation] = useState("")
   const [endLocation, setEndLocation] = useState("")
@@ -24,9 +25,10 @@ export function RideForm({ onSuccess }: RideFormProps) {
   const [rideTime, setRideTime] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const showLocations = ["cooperative", "private", "invoiced"].includes(category)
+  const showLocations = ["cooperative", "invoiced"].includes(category)
   const showCommission = type === "passed"
   const showDispatcher = category === "cooperative"
+  const showCompanyName = category === "invoiced"
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,6 +48,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
       commission: showCommission && commission ? parseFloat(commission) : null,
       driver_name: showCommission ? driverName : null,
       passenger_name: passengerName || null,
+      company_name: showCompanyName ? companyName : null,
       dispatcher_name: showDispatcher ? dispatcherName : null,
       start_location: showLocations ? startLocation : null,
       end_location: showLocations ? endLocation : null,
@@ -62,11 +65,12 @@ export function RideForm({ onSuccess }: RideFormProps) {
 
   function resetForm() {
     setType("own")
-    setCategory("app")
+    setCategory("particular")
     setValue("")
     setCommission("")
     setDriverName("")
     setPassengerName("")
+    setCompanyName("")
     setDispatcherName("")
     setStartLocation("")
     setEndLocation("")
@@ -86,7 +90,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
             type === "own" ? "bg-taxi-primary text-white" : "bg-white border border-taxi-gray-200"
           }`}
         >
-          Própria
+          Particular
         </button>
         <button
           type="button"
@@ -106,10 +110,8 @@ export function RideForm({ onSuccess }: RideFormProps) {
           onChange={(e) => setCategory(e.target.value as RideCategory)}
           className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
         >
-          <option value="app">App (Uber, 99, InDrive)</option>
-          <option value="taximeter">Taxímetro</option>
+          <option value="particular">Particular</option>
           <option value="cooperative">Cooperativa</option>
-          <option value="private">Particular</option>
           <option value="invoiced">Faturado</option>
         </select>
       </div>
@@ -185,6 +187,19 @@ export function RideForm({ onSuccess }: RideFormProps) {
           className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
         />
       </div>
+
+      {showCompanyName && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Nome da Empresa (opcional)</label>
+          <input
+            type="text"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+            placeholder="Ex: Empresa ABC Ltda"
+          />
+        </div>
+      )}
 
       {showDispatcher && (
         <div>

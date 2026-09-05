@@ -30,11 +30,12 @@ export default function AluguelPage() {
 
   // Ride form states
   const [showAddRide, setShowAddRide] = useState(false)
-  const [rideCategory, setRideCategory] = useState<"private" | "invoiced">("private")
+  const [rideCategory, setRideCategory] = useState<"particular" | "invoiced">("particular")
   const [rideValue, setRideValue] = useState("")
   const [rideCommission, setRideCommission] = useState("")
   const [rideDriverName, setRideDriverName] = useState("")
   const [ridePassengerName, setRidePassengerName] = useState("")
+  const [rideCompanyName, setRideCompanyName] = useState("")
   const [rideReceivedWithClient, setRideReceivedWithClient] = useState(false)
   const [rideStartLocation, setRideStartLocation] = useState("")
   const [rideEndLocation, setRideEndLocation] = useState("")
@@ -244,6 +245,7 @@ export default function AluguelPage() {
       commission: rideReceivedWithClient ? null : (rideCommission ? parseFloat(rideCommission) : null),
       driver_name: rideDriverName || null,
       passenger_name: ridePassengerName || null,
+      company_name: rideCategory === "invoiced" ? (rideCompanyName || null) : null,
       start_location: rideStartLocation || null,
       end_location: rideEndLocation || null,
       ride_date: rideDateTime,
@@ -625,7 +627,7 @@ export default function AluguelPage() {
                         className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
                         required
                       >
-                        <option value="private">Particular</option>
+                        <option value="particular">Particular</option>
                         <option value="invoiced">Faturado</option>
                       </select>
                     </div>
@@ -733,6 +735,18 @@ export default function AluguelPage() {
                         className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
                       />
                     </div>
+                    {rideCategory === "invoiced" && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Nome da Empresa (opcional)</label>
+                        <input
+                          type="text"
+                          value={rideCompanyName}
+                          onChange={(e) => setRideCompanyName(e.target.value)}
+                          className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                          placeholder="Ex: Empresa ABC Ltda"
+                        />
+                      </div>
+                    )}
                     <button
                       type="submit"
                       className="w-full py-3 bg-taxi-success text-white font-medium rounded-xl hover:bg-opacity-90"

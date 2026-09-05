@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { Ride } from "../lib/types"
+import type { Ride, RideCategory } from "../lib/types"
 import { getSupabase } from "../lib/supabase"
 
 interface RideListProps {
@@ -10,6 +10,15 @@ interface RideListProps {
   onRefresh: () => void
   currentUserId?: string
   drivers?: { id: string; nome: string }[]
+}
+
+function getCategoryLabel(category: RideCategory): string {
+  const labels: Record<RideCategory, string> = {
+    particular: "Particular",
+    cooperative: "Cooperativa",
+    invoiced: "Faturado",
+  }
+  return labels[category] || category
 }
 
 export function RideList({ rides, onDelete, onRefresh, currentUserId, drivers = [] }: RideListProps) {
@@ -197,9 +206,9 @@ export function RideList({ rides, onDelete, onRefresh, currentUserId, drivers = 
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold">{ride.category}</span>
+                <span className="font-semibold">{getCategoryLabel(ride.category)}</span>
                 <span className="text-xs text-taxi-gray-500">
-                  {ride.type === "own" ? "Própria" : "Passada"}
+                  {ride.type === "own" ? "Particular" : "Passada"}
                 </span>
                 {ride.user_id !== currentUserId && (
                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
@@ -207,6 +216,11 @@ export function RideList({ rides, onDelete, onRefresh, currentUserId, drivers = 
                   </span>
                 )}
               </div>
+              {ride.company_name && (
+                <p className="text-sm text-taxi-gray-500 mt-1">
+                  Empresa: {ride.company_name}
+                </p>
+              )}
               <p className="text-xs text-taxi-gray-500 mt-1">
                 {new Date(ride.ride_date).toLocaleDateString("pt-BR")} {new Date(ride.ride_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
               </p>
