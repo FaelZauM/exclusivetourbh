@@ -233,6 +233,10 @@ export default function HistoricoPage() {
   const totalGasolina = typeFilter !== "passed" ? filteredFuelExpenses.reduce((sum, f) => sum + f.total_value, 0) : 0
   const faturamentoLiquidoPosGasolina = faturamentoLiquido - totalGasolina
 
+  const monthlyTotalLiquido = rides.reduce((sum, ride) => sum + getEarnings(ride), 0)
+  const monthlyTotalGasolina = typeFilter !== "passed" ? fuelExpenses.reduce((sum, f) => sum + f.total_value, 0) : 0
+  const monthlyNet = monthlyTotalLiquido - monthlyTotalGasolina
+
   const now = new Date()
   const startOfWeek = new Date(now)
   startOfWeek.setDate(now.getDate() - now.getDay())
@@ -387,7 +391,7 @@ export default function HistoricoPage() {
 
           <div className="mb-6">
             <ProgressBar
-              current={typeFilter !== "passed" ? faturamentoLiquidoPosGasolina : faturamentoLiquido}
+              current={monthlyNet}
               goal={monthlyGoal}
               label="Meta Mensal"
             />
