@@ -39,18 +39,20 @@ CREATE TABLE IF NOT EXISTS rides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('own', 'passed')),
-  category TEXT NOT NULL CHECK (category IN ('app', 'taximeter', 'cooperative', 'private', 'invoiced')),
+  category TEXT NOT NULL CHECK (category IN ('particular', 'cooperative', 'invoiced')),
   value DECIMAL(10,2) NOT NULL,
   commission DECIMAL(10,2),
   driver_name TEXT,
   passenger_name TEXT,
   dispatcher_name TEXT,
+  company_name TEXT,
   start_location TEXT,
   end_location TEXT,
   ride_date TIMESTAMP WITH TIME ZONE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   added_by_admin BOOLEAN DEFAULT false,
-  received_with_client BOOLEAN DEFAULT false
+  received_with_client BOOLEAN DEFAULT false,
+  paid_to_driver BOOLEAN DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS fuel (
