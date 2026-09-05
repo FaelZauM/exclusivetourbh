@@ -1,6 +1,5 @@
 "use client"
 
-import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { AuthProvider, useAuth } from "./lib/auth-context"
 import { Header } from "./components/Header"

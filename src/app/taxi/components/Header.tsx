@@ -9,7 +9,7 @@ export function Header() {
     <header className="sticky top-0 bg-white border-b border-taxi-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-bold text-lg">Taxi Control</h1>
+          <h1 className="font-bold text-lg">ExclusivePro</h1>
           {user && (
             <p className="text-xs text-taxi-gray-500">{user.nome}</p>
           )}

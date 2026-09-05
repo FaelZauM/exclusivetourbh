@@ -29,7 +29,7 @@ export default function AuthPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center mb-8">Taxi Control</h1>
+        <h1 className="text-2xl font-bold text-center mb-8">ExclusivePro</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
