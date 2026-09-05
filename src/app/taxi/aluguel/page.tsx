@@ -125,7 +125,25 @@ export default function AluguelPage() {
       .eq("user_id", car.driver_id)
       .order("ride_date", { ascending: false })
 
-    setCarRides(ridesData || [])
+    const sortedRides = (ridesData || []).sort((a, b) => {
+      const dateA = new Date(a.ride_date).getTime()
+      const dateB = new Date(b.ride_date).getTime()
+      const todayTime = new Date().setHours(0, 0, 0, 0)
+      
+      const aIsFuture = dateA >= todayTime
+      const bIsFuture = dateB >= todayTime
+      const aIsToday = dateA >= todayTime && dateA < todayTime + 86400000
+      const bIsToday = dateB >= todayTime && dateB < todayTime + 86400000
+
+      if (aIsFuture && !bIsFuture) return -1
+      if (!aIsFuture && bIsFuture) return 1
+      if (aIsToday && !bIsToday) return -1
+      if (!aIsToday && bIsToday) return 1
+      
+      return dateB - dateA
+    })
+
+    setCarRides(sortedRides)
   }
 
   async function handleInviteDriver(e: React.FormEvent) {
