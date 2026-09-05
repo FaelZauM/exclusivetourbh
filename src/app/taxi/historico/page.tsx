@@ -38,6 +38,7 @@ export default function HistoricoPage() {
   const [editCommission, setEditCommission] = useState("")
   const [editPassengerName, setEditPassengerName] = useState("")
   const [editCompanyName, setEditCompanyName] = useState("")
+  const [editCarType, setEditCarType] = useState<"executivo" | "taxi">("executivo")
   const [editStartLocation, setEditStartLocation] = useState("")
   const [editEndLocation, setEditEndLocation] = useState("")
   const [editDate, setEditDate] = useState("")
@@ -176,6 +177,7 @@ export default function HistoricoPage() {
     setEditCommission(ride.commission?.toString() || "")
     setEditPassengerName(ride.passenger_name || "")
     setEditCompanyName(ride.company_name || "")
+    setEditCarType(ride.car_type || "executivo")
     setEditStartLocation(ride.start_location || "")
     setEditEndLocation(ride.end_location || "")
     const rideDate = new Date(ride.ride_date)
@@ -200,6 +202,7 @@ export default function HistoricoPage() {
       .update({
         value: parseFloat(editValue),
         commission: editCommission ? parseFloat(editCommission) : null,
+        car_type: editCarType,
         passenger_name: editPassengerName || null,
         company_name: editCompanyName || null,
         start_location: editStartLocation || null,
@@ -557,6 +560,35 @@ export default function HistoricoPage() {
                             </div>
                           )}
                         </div>
+                        {ride.type === "passed" && (
+                          <div>
+                            <label className="text-xs text-taxi-gray-500 mb-1 block">Tipo de Carro</label>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditCarType("executivo")}
+                                className={`flex-1 py-2 rounded-lg text-sm ${
+                                  editCarType === "executivo"
+                                    ? "bg-taxi-success text-white"
+                                    : "bg-white border border-taxi-gray-200"
+                                }`}
+                              >
+                                Executivo
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditCarType("taxi")}
+                                className={`flex-1 py-2 rounded-lg text-sm ${
+                                  editCarType === "taxi"
+                                    ? "bg-taxi-success text-white"
+                                    : "bg-white border border-taxi-gray-200"
+                                }`}
+                              >
+                                Táxi
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-xs text-taxi-gray-500">Data</label>
