@@ -190,7 +190,7 @@ export default function HistoricoPage() {
     return sum + getEarnings(ride)
   }, 0)
 
-  const totalGasolina = fuelExpenses.reduce((sum, f) => sum + f.total_value, 0)
+  const totalGasolina = typeFilter !== "passed" ? fuelExpenses.reduce((sum, f) => sum + f.total_value, 0) : 0
   const faturamentoLiquidoPosGasolina = faturamentoLiquido - totalGasolina
 
   const now = new Date()
@@ -302,7 +302,7 @@ export default function HistoricoPage() {
 
           <div className="mb-6">
             <ProgressBar
-              current={faturamentoLiquidoPosGasolina}
+              current={typeFilter !== "passed" ? faturamentoLiquidoPosGasolina : faturamentoLiquido}
               goal={monthlyGoal}
               label="Meta Mensal"
             />
@@ -322,7 +322,7 @@ export default function HistoricoPage() {
                   R$ {faturamentoLiquido.toFixed(2)}
                 </p>
               </div>
-              {user?.role === "admin" && totalGasolina > 0 && (
+              {user?.role === "admin" && totalGasolina > 0 && typeFilter !== "passed" && (
                 <div className="border-t border-taxi-gray-200 pt-3">
                   <p className="text-sm text-taxi-gray-500">(-) Gasolina</p>
                   <p className="text-xl font-bold text-taxi-danger">
@@ -330,7 +330,7 @@ export default function HistoricoPage() {
                   </p>
                 </div>
               )}
-              {user?.role === "admin" && totalGasolina > 0 && (
+              {user?.role === "admin" && totalGasolina > 0 && typeFilter !== "passed" && (
                 <div className="border-t border-taxi-gray-200 pt-3">
                   <p className="text-sm text-taxi-gray-500">Líquido pós-gasolina</p>
                   <p className="text-2xl font-bold text-taxi-success">
