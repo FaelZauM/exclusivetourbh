@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useAuth } from "../lib/auth-context"
 
 const navItems = [
   { href: "/taxi/corridas", label: "Corridas", icon: "🚗" },
@@ -10,13 +11,20 @@ const navItems = [
   { href: "/taxi/config", label: "Config", icon: "⚙️" },
 ]
 
+const adminNavItems = [
+  { href: "/taxi/aluguel", label: "Aluguel", icon: "🚗" },
+]
+
 export function BottomNav() {
   const pathname = usePathname()
+  const { user } = useAuth()
+
+  const items = user?.role === "admin" ? [...navItems, ...adminNavItems] : navItems
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-taxi-gray-200 px-4 py-2">
       <div className="flex justify-around">
-        {navItems.map((item) => (
+        {items.map((item) => (
           <Link
             key={item.href}
             href={item.href}

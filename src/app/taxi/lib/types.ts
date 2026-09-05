@@ -54,5 +54,35 @@ export interface DriverGoal {
   updated_at: string
 }
 
+export interface RentalGoal {
+  id: string
+  driver_id: string
+  start_day: number
+  end_day: number
+  goal_value: number
+  month: number
+  year: number
+  created_at: string
+}
+
+export interface DriverCar {
+  id: string
+  owner_id: string
+  driver_id: string
+  car_model: string
+  license_plate: string
+  car_type: "executive" | "taxi"
+  active: boolean
+  created_at: string
+}
+
+export interface DriverInvitation {
+  id: string
+  owner_id: string
+  email: string
+  status: "pending" | "accepted" | "expired"
+  created_at: string
+}
+
 export type RideCategory = "app" | "taximeter" | "cooperative" | "private" | "invoiced"
 export type RideType = "own" | "passed"
