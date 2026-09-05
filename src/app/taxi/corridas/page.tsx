@@ -6,6 +6,7 @@ import { useAuth } from "../lib/auth-context"
 import { RideForm } from "../components/RideForm"
 import { RideList } from "../components/RideList"
 import { ProgressBar } from "../components/ProgressBar"
+import { KmTracker } from "../components/KmTracker"
 import type { Ride, User, Goal, DriverGoal } from "../lib/types"
 
 export default function RidesPage() {
@@ -174,6 +175,10 @@ export default function RidesPage() {
           goal={dailyGoal}
           label="Meta Diária"
         />
+      </div>
+
+      <div className="mb-6">
+        <KmTracker />
       </div>
 
       <RideForm onSuccess={fetchRides} />

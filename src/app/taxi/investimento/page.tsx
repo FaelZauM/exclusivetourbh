@@ -5,7 +5,6 @@ import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { FuelForm } from "../components/FuelForm"
 import { FuelPriceForm } from "../components/FuelPriceForm"
-import { KmTracker } from "../components/KmTracker"
 import type { Fuel } from "../lib/types"
 
 export default function InvestmentPage() {
@@ -15,8 +14,6 @@ export default function InvestmentPage() {
   const [editingFuel, setEditingFuel] = useState<Fuel | null>(null)
   const [editLiters, setEditLiters] = useState("")
   const [editTotalValue, setEditTotalValue] = useState("")
-  const [editKmStart, setEditKmStart] = useState("")
-  const [editKmEnd, setEditKmEnd] = useState("")
   const [editLoading, setEditLoading] = useState(false)
 
   useEffect(() => {
@@ -51,8 +48,6 @@ export default function InvestmentPage() {
     setEditingFuel(fuel)
     setEditLiters(fuel.liters?.toString() || "")
     setEditTotalValue(fuel.total_value.toString())
-    setEditKmStart(fuel.km_start?.toString() || "")
-    setEditKmEnd(fuel.km_end?.toString() || "")
   }
 
   function cancelEdit() {
@@ -68,8 +63,6 @@ export default function InvestmentPage() {
       .update({
         liters: editLiters ? parseFloat(editLiters) : null,
         total_value: parseFloat(editTotalValue),
-        km_start: editKmStart ? parseFloat(editKmStart) : null,
-        km_end: editKmEnd ? parseFloat(editKmEnd) : null,
       })
       .eq("id", editingFuel.id)
 
@@ -97,8 +90,6 @@ export default function InvestmentPage() {
           </p>
         </div>
       </div>
-
-      <KmTracker />
 
       <div className="mt-6 space-y-4">
         <FuelForm onSuccess={fetchData} />
@@ -137,26 +128,6 @@ export default function InvestmentPage() {
                           className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
                         />
                       </div>
-                      <div>
-                        <label className="text-xs text-taxi-gray-500">KM Início</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editKmStart}
-                          onChange={(e) => setEditKmStart(e.target.value)}
-                          className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-taxi-gray-500">KM Fim</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editKmEnd}
-                          onChange={(e) => setEditKmEnd(e.target.value)}
-                          className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
-                        />
-                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -184,11 +155,6 @@ export default function InvestmentPage() {
                       <p className="text-taxi-gray-500">
                         {new Date(fuel.fuel_date).toLocaleDateString("pt-BR")}
                       </p>
-                      {fuel.km_start && fuel.km_end && (
-                        <p className="text-xs text-taxi-gray-400">
-                          {fuel.km_start} → {fuel.km_end} km
-                        </p>
-                      )}
                     </div>
                     <div className="flex gap-1">
                       <button

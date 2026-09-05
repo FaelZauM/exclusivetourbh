@@ -12,8 +12,6 @@ export function FuelForm({ onSuccess }: FuelFormProps) {
   const { user } = useAuth()
   const [liters, setLiters] = useState("")
   const [totalValue, setTotalValue] = useState("")
-  const [kmStart, setKmStart] = useState("")
-  const [kmEnd, setKmEnd] = useState("")
   const [fuelDate, setFuelDate] = useState(new Date().toISOString().split("T")[0])
   const [loading, setLoading] = useState(false)
 
@@ -28,8 +26,6 @@ export function FuelForm({ onSuccess }: FuelFormProps) {
       fuel_date: new Date(fuelDate + "T12:00:00").toISOString(),
       liters: liters ? parseFloat(liters) : null,
       total_value: parseFloat(totalValue),
-      km_start: kmStart ? parseFloat(kmStart) : null,
-      km_end: kmEnd ? parseFloat(kmEnd) : null,
     })
 
     setLoading(false)
@@ -43,8 +39,6 @@ export function FuelForm({ onSuccess }: FuelFormProps) {
   function resetForm() {
     setLiters("")
     setTotalValue("")
-    setKmStart("")
-    setKmEnd("")
     setFuelDate(new Date().toISOString().split("T")[0])
   }
 
@@ -84,29 +78,6 @@ export function FuelForm({ onSuccess }: FuelFormProps) {
           onChange={(e) => setLiters(e.target.value)}
           className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">KM Início</label>
-          <input
-            type="number"
-            step="0.01"
-            value={kmStart}
-            onChange={(e) => setKmStart(e.target.value)}
-            className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">KM Fim</label>
-          <input
-            type="number"
-            step="0.01"
-            value={kmEnd}
-            onChange={(e) => setKmEnd(e.target.value)}
-            className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
-          />
-        </div>
       </div>
 
       <button
