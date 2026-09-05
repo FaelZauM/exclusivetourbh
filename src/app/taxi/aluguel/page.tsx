@@ -34,6 +34,7 @@ export default function AluguelPage() {
   const [rideValue, setRideValue] = useState("")
   const [rideCommission, setRideCommission] = useState("")
   const [rideDriverName, setRideDriverName] = useState("")
+  const [ridePassengerName, setRidePassengerName] = useState("")
   const [rideReceivedWithClient, setRideReceivedWithClient] = useState(false)
   const [rideStartLocation, setRideStartLocation] = useState("")
   const [rideEndLocation, setRideEndLocation] = useState("")
@@ -214,6 +215,7 @@ export default function AluguelPage() {
       value: parseFloat(rideValue),
       commission: rideReceivedWithClient ? null : (rideCommission ? parseFloat(rideCommission) : null),
       driver_name: rideDriverName || null,
+      passenger_name: ridePassengerName || null,
       start_location: rideStartLocation || null,
       end_location: rideEndLocation || null,
       ride_date: rideDateTime,
@@ -225,6 +227,7 @@ export default function AluguelPage() {
       setRideValue("")
       setRideCommission("")
       setRideDriverName("")
+      setRidePassengerName("")
       setRideStartLocation("")
       setRideEndLocation("")
       setRideDate("")
@@ -636,6 +639,15 @@ export default function AluguelPage() {
                         type="text"
                         value={rideDriverName}
                         onChange={(e) => setRideDriverName(e.target.value)}
+                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Passageiro (opcional)</label>
+                      <input
+                        type="text"
+                        value={ridePassengerName}
+                        onChange={(e) => setRidePassengerName(e.target.value)}
                         className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
                       />
                     </div>

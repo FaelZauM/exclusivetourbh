@@ -11,7 +11,6 @@ export default function RidesPage() {
   const { user } = useAuth()
   const [rides, setRides] = useState<Ride[]>([])
   const [drivers, setDrivers] = useState<User[]>([])
-  const [adminCommission, setAdminCommission] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,16 +25,18 @@ export default function RidesPage() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const { data: myRides } = await getSupabase()
-      .from("rides")
-      .select("*")
-      .eq("user_id", user.id)
-      .gte("ride_date", today.toISOString())
-      .order("ride_date", { ascending: false })
-
-    let allRides = myRides || []
+    let allRides: Ride[] = []
 
     if (user.role === "admin") {
+      const { data: myRides } = await getSupabase()
+        .from("rides")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("ride_date", today.toISOString())
+        .order("ride_date", { ascending: false })
+
+      allRides = myRides || []
+
       const { data: carsData } = await getSupabase()
         .from("driver_cars")
         .select("driver_id")
@@ -44,6 +45,14 @@ export default function RidesPage() {
 
       if (carsData && carsData.length > 0) {
         const driverIds = carsData.map((c) => c.driver_id)
+
+        const { data: driversData } = await getSupabase()
+          .from("users")
+          .select("*")
+          .in("id", driverIds)
+
+        setDrivers(driversData || [])
+
         const { data: driverRides } = await getSupabase()
           .from("rides")
           .select("*")
@@ -53,50 +62,21 @@ export default function RidesPage() {
 
         if (driverRides) {
           allRides = [...allRides, ...driverRides]
-          allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
         }
       }
+    } else {
+      const { data: myRides } = await getSupabase()
+        .from("rides")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("ride_date", today.toISOString())
+        .order("ride_date", { ascending: false })
+
+      allRides = myRides || []
     }
 
+    allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
     setRides(allRides)
-
-    if (user.role === "admin") {
-      const { data: carsData } = await getSupabase()
-        .from("driver_cars")
-        .select("driver_id")
-        .eq("owner_id", user.id)
-        .eq("active", true)
-
-      if (carsData && carsData.length > 0) {
-        const driverIds = carsData.map((c) => c.driver_id)
-        const { data: driverRides } = await getSupabase()
-          .from("rides")
-          .select("value, commission, type, received_with_client")
-          .in("user_id", driverIds)
-          .eq("type", "passed")
-          .eq("added_by_admin", true)
-          .gte("ride_date", today.toISOString())
-
-        if (driverRides) {
-          const totalCommission = driverRides.reduce((sum, ride) => {
-            if (ride.received_with_client) return sum
-            if (ride.commission) {
-              return sum + (ride.value - ride.commission)
-            }
-            return sum
-          }, 0)
-          setAdminCommission(totalCommission)
-        }
-
-        const { data: driversData } = await getSupabase()
-          .from("users")
-          .select("*")
-          .in("id", driverIds)
-
-        setDrivers(driversData || [])
-      }
-    }
-
     setLoading(false)
   }
 
@@ -115,8 +95,23 @@ export default function RidesPage() {
     return ride.value
   }
 
-  const totalValue = rides.reduce((sum, ride) => sum + getEarnings(ride), 0)
-  const totalWithCommission = totalValue + adminCommission
+  function getAdminCommission(ride: Ride): number {
+    if (ride.received_with_client) return 0
+    if (ride.type === "passed" && ride.commission) {
+      return ride.value - ride.commission
+    }
+    return 0
+  }
+
+  const totalOwn = rides
+    .filter((r) => r.user_id === user?.id)
+    .reduce((sum, ride) => sum + getEarnings(ride), 0)
+
+  const totalDrivers = rides
+    .filter((r) => r.user_id !== user?.id)
+    .reduce((sum, ride) => sum + getAdminCommission(ride), 0)
+
+  const totalWithCommission = totalOwn + totalDrivers
 
   return (
     <main className="p-4">
@@ -127,9 +122,9 @@ export default function RidesPage() {
           <p className="text-2xl font-bold text-taxi-success">
             R$ {totalWithCommission.toFixed(2)}
           </p>
-          {user?.role === "admin" && adminCommission > 0 && (
+          {user?.role === "admin" && totalDrivers > 0 && (
             <p className="text-xs text-taxi-gray-500 mt-1">
-              Inclui R$ {adminCommission.toFixed(2)} de comissões
+              Inclui R$ {totalDrivers.toFixed(2)} de comissões
             </p>
           )}
         </div>
