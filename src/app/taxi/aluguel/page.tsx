@@ -30,10 +30,15 @@ export default function AluguelPage() {
 
   // Ride form states
   const [showAddRide, setShowAddRide] = useState(false)
-  const [rideCategory, setRideCategory] = useState<"app" | "taximeter" | "cooperative" | "private" | "invoiced">("app")
+  const [rideCategory, setRideCategory] = useState<"private" | "invoiced">("private")
   const [rideValue, setRideValue] = useState("")
   const [rideCommission, setRideCommission] = useState("")
   const [rideDriverName, setRideDriverName] = useState("")
+  const [rideReceivedWithClient, setRideReceivedWithClient] = useState(false)
+  const [rideStartLocation, setRideStartLocation] = useState("")
+  const [rideEndLocation, setRideEndLocation] = useState("")
+  const [rideDate, setRideDate] = useState("")
+  const [rideTime, setRideTime] = useState("")
 
   useEffect(() => {
     if (user) {
@@ -198,21 +203,33 @@ export default function AluguelPage() {
     const car = myCars.find((c) => c.id === selectedCar)
     if (!car) return
 
+    const rideDateTime = rideDate && rideTime 
+      ? new Date(`${rideDate}T${rideTime}`).toISOString()
+      : new Date().toISOString()
+
     const { error } = await getSupabase().from("rides").insert({
       user_id: car.driver_id,
       type: "passed",
       category: rideCategory,
       value: parseFloat(rideValue),
-      commission: rideCommission ? parseFloat(rideCommission) : null,
+      commission: rideReceivedWithClient ? null : (rideCommission ? parseFloat(rideCommission) : null),
       driver_name: rideDriverName || null,
-      ride_date: new Date().toISOString(),
+      start_location: rideStartLocation || null,
+      end_location: rideEndLocation || null,
+      ride_date: rideDateTime,
       added_by_admin: true,
+      received_with_client: rideReceivedWithClient,
     })
 
     if (!error) {
       setRideValue("")
       setRideCommission("")
       setRideDriverName("")
+      setRideStartLocation("")
+      setRideEndLocation("")
+      setRideDate("")
+      setRideTime("")
+      setRideReceivedWithClient(false)
       setShowAddRide(false)
       fetchCarData()
     }
@@ -229,6 +246,9 @@ export default function AluguelPage() {
   const selectedCarData = myCars.find((c) => c.id === selectedCar)
   
   function getEarnings(ride: any): number {
+    if (ride.received_with_client) {
+      return 0
+    }
     if (ride.type === "passed" && ride.commission) {
       return ride.value - ride.commission
     }
@@ -520,12 +540,51 @@ export default function AluguelPage() {
                         className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
                         required
                       >
-                        <option value="app">App (Uber, 99, InDrive)</option>
-                        <option value="taximeter">Taxímetro</option>
-                        <option value="cooperative">Cooperativa</option>
                         <option value="private">Particular</option>
                         <option value="invoiced">Faturado</option>
                       </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Data</label>
+                        <input
+                          type="date"
+                          value={rideDate}
+                          onChange={(e) => setRideDate(e.target.value)}
+                          className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Hora</label>
+                        <input
+                          type="time"
+                          value={rideTime}
+                          onChange={(e) => setRideTime(e.target.value)}
+                          className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Origem</label>
+                      <input
+                        type="text"
+                        value={rideStartLocation}
+                        onChange={(e) => setRideStartLocation(e.target.value)}
+                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                        placeholder="Ex: Cajuru"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Destino</label>
+                      <input
+                        type="text"
+                        value={rideEndLocation}
+                        onChange={(e) => setRideEndLocation(e.target.value)}
+                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                        placeholder="Ex: CNF"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Valor Total (R$)</label>
@@ -538,20 +597,39 @@ export default function AluguelPage() {
                         required
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Valor do Motorista (R$)</label>
+                    {!rideReceivedWithClient && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Valor do Motorista (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={rideCommission}
+                          onChange={(e) => setRideCommission(e.target.value)}
+                          className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                          required
+                        />
+                        <p className="text-xs text-taxi-gray-500 mt-1">
+                          Sua comissão: R$ {rideValue && rideCommission ? (parseFloat(rideValue) - parseFloat(rideCommission)).toFixed(2) : "0.00"}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
                       <input
-                        type="number"
-                        step="0.01"
-                        value={rideCommission}
-                        onChange={(e) => setRideCommission(e.target.value)}
-                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
-                        required
+                        type="checkbox"
+                        id="receivedWithClient"
+                        checked={rideReceivedWithClient}
+                        onChange={(e) => setRideReceivedWithClient(e.target.checked)}
+                        className="w-5 h-5"
                       />
-                      <p className="text-xs text-taxi-gray-500 mt-1">
-                        Sua comissão: R$ {rideValue && rideCommission ? (parseFloat(rideValue) - parseFloat(rideCommission)).toFixed(2) : "0.00"}
-                      </p>
+                      <label htmlFor="receivedWithClient" className="text-sm font-medium">
+                        Recebeu com cliente
+                      </label>
                     </div>
+                    {rideReceivedWithClient && (
+                      <p className="text-xs text-taxi-gray-500">
+                        Apenas registrado. Não entra na meta nem no aluguel.
+                      </p>
+                    )}
                     <div>
                       <label className="block text-sm font-medium mb-1">Motorista (opcional)</label>
                       <input
@@ -577,21 +655,28 @@ export default function AluguelPage() {
                     {carRides.map((ride) => (
                       <div
                         key={ride.id}
-                        className="p-3 bg-white border border-taxi-gray-200 rounded-xl flex justify-between items-center"
+                        className="p-3 bg-white border border-taxi-gray-200 rounded-xl"
                       >
-                        <div>
-                          <p className="font-medium">{ride.category}</p>
-                          <p className="text-sm text-taxi-gray-500">
-                            {new Date(ride.ride_date).toLocaleDateString("pt-BR")}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-taxi-success">R$ {ride.commission?.toFixed(2) || ride.value.toFixed(2)}</p>
-                          {ride.commission && (
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">{ride.category}</p>
+                            {(ride.start_location || ride.end_location) && (
+                              <p className="text-sm text-taxi-gray-500">
+                                {ride.start_location} → {ride.end_location}
+                              </p>
+                            )}
                             <p className="text-xs text-taxi-gray-500">
-                              Total: R$ {ride.value.toFixed(2)}
+                              {new Date(ride.ride_date).toLocaleDateString("pt-BR")} {new Date(ride.ride_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                             </p>
-                          )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-taxi-success">R$ {ride.commission?.toFixed(2) || ride.value.toFixed(2)}</p>
+                            {ride.commission && (
+                              <p className="text-xs text-taxi-gray-500">
+                                Total: R$ {ride.value.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

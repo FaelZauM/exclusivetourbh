@@ -41,6 +41,9 @@ export default function RidesPage() {
   }
 
   function getEarnings(ride: Ride): number {
+    if (ride.received_with_client) {
+      return 0
+    }
     if (ride.type === "passed" && ride.commission) {
       return ride.commission
     }

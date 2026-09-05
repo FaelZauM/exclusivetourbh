@@ -21,6 +21,7 @@ export interface Ride {
   ride_date: string
   created_at: string
   added_by_admin?: boolean
+  received_with_client?: boolean
 }
 
 export interface Fuel {
