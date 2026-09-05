@@ -4,18 +4,12 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import type { Ride } from "../lib/types"
-
-interface WeekData {
-  week: number
-  label: string
-  rides: Ride[]
-  total: number
-}
+import type { Ride, User } from "../lib/types"
 
 export default function HistoricoPage() {
   const { user } = useAuth()
   const [rides, setRides] = useState<Ride[]>([])
+  const [drivers, setDrivers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -38,9 +32,16 @@ export default function HistoricoPage() {
       .eq("user_id", user.id)
       .gte("ride_date", startDate.toISOString())
       .lte("ride_date", endDate.toISOString())
-      .order("ride_date", { ascending: true })
+      .order("ride_date", { ascending: false })
 
     setRides(data || [])
+
+    const { data: driversData } = await getSupabase()
+      .from("users")
+      .select("*")
+      .eq("role", "driver")
+
+    setDrivers(driversData || [])
     setLoading(false)
   }
 
@@ -54,46 +55,12 @@ export default function HistoricoPage() {
     return ride.value
   }
 
-  function getWeeksInMonth(year: number, month: number): WeekData[] {
-    const weeks: WeekData[] = []
-    const firstDay = new Date(year, month - 1, 1)
-    const lastDay = new Date(year, month, 0)
-
-    let currentWeek = 1
-    let weekStart = new Date(firstDay)
-    let weekEnd = new Date(firstDay)
-    weekEnd.setDate(weekEnd.getDate() + (6 - weekEnd.getDay()))
-
-    while (weekStart <= lastDay) {
-      if (weekEnd > lastDay) {
-        weekEnd = new Date(lastDay)
-      }
-
-      const weekRides = rides.filter((ride) => {
-        const rideDate = new Date(ride.ride_date)
-        return rideDate >= weekStart && rideDate <= weekEnd
-      })
-
-      const weekTotal = weekRides.reduce((sum, ride) => sum + getEarnings(ride), 0)
-
-      weeks.push({
-        week: currentWeek,
-        label: `${weekStart.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} - ${weekEnd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`,
-        rides: weekRides,
-        total: weekTotal,
-      })
-
-      weekStart = new Date(weekEnd)
-      weekStart.setDate(weekStart.getDate() + 1)
-      weekEnd = new Date(weekStart)
-      weekEnd.setDate(weekEnd.getDate() + 6)
-      currentWeek++
-    }
-
-    return weeks
+  function getDriverName(userId: string): string {
+    if (user?.id === userId) return "Você"
+    const driver = drivers.find((d) => d.id === userId)
+    return driver?.nome || "Desconhecido"
   }
 
-  const weeks = getWeeksInMonth(selectedYear, selectedMonth)
   const monthTotal = rides.reduce((sum, ride) => sum + getEarnings(ride), 0)
   const monthGoal = 2000
 
@@ -150,40 +117,53 @@ export default function HistoricoPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            {weeks.map((week) => (
-              <div key={week.week} className="p-4 bg-white border border-taxi-gray-200 rounded-xl">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-semibold">Semana {week.week}</h3>
-                  <p className="font-bold text-taxi-success">R$ {week.total.toFixed(2)}</p>
-                </div>
-                <p className="text-xs text-taxi-gray-500 mb-2">{week.label}</p>
-                <p className="text-xs text-taxi-gray-500">
-                  {week.rides.length} corridas
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {rides.length > 0 && (
-            <div className="mt-6">
-              <h3 className="font-semibold mb-3">Todas as Corridas</h3>
-              <div className="space-y-2">
-                {rides.map((ride) => (
-                  <div
-                    key={ride.id}
-                    className="p-3 bg-white border border-taxi-gray-200 rounded-xl flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="font-medium">{ride.category}</p>
-                      <p className="text-xs text-taxi-gray-500">
+          {rides.length === 0 ? (
+            <p className="text-center text-taxi-gray-500 py-8">
+              Nenhuma corrida registrada neste mês.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {rides.map((ride) => (
+                <div
+                  key={ride.id}
+                  className="p-4 bg-white border border-taxi-gray-200 rounded-xl"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{ride.category}</span>
+                        <span className="text-xs text-taxi-gray-500">
+                          {ride.type === "own" ? "Própria" : "Passada"}
+                        </span>
+                      </div>
+                      <p className="text-sm text-taxi-gray-600 mt-1">
+                        {getDriverName(ride.user_id)}
+                      </p>
+                      {ride.passenger_name && (
+                        <p className="text-sm text-taxi-gray-500">
+                          Passageiro: {ride.passenger_name}
+                        </p>
+                      )}
+                      {(ride.start_location || ride.end_location) && (
+                        <p className="text-sm text-taxi-gray-500">
+                          {ride.start_location} → {ride.end_location}
+                        </p>
+                      )}
+                      <p className="text-xs text-taxi-gray-500 mt-1">
                         {new Date(ride.ride_date).toLocaleDateString("pt-BR")} {new Date(ride.ride_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
-                    <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
+                    <div className="text-right">
+                      <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
+                      {ride.commission && !ride.received_with_client && (
+                        <p className="text-xs text-taxi-gray-500">
+                          Total: R$ {ride.value.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           )}
         </>
