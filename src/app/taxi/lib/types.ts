@@ -10,7 +10,7 @@ export interface Ride {
   id: string
   user_id: string
   type: "own" | "passed"
-  category: "particular" | "cooperative" | "invoiced"
+  category: "app" | "taximeter" | "cooperative" | "private" | "invoiced"
   value: number
   commission?: number
   driver_name?: string
@@ -88,5 +88,5 @@ export interface DriverInvitation {
   created_at: string
 }
 
-export type RideCategory = "particular" | "cooperative" | "invoiced"
+export type RideCategory = "app" | "taximeter" | "cooperative" | "private" | "invoiced"
 export type RideType = "own" | "passed"

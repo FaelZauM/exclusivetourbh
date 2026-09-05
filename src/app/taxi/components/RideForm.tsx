@@ -12,7 +12,7 @@ interface RideFormProps {
 export function RideForm({ onSuccess }: RideFormProps) {
   const { user } = useAuth()
   const [type, setType] = useState<RideType>("own")
-  const [category, setCategory] = useState<RideCategory>("particular")
+  const [category, setCategory] = useState<RideCategory>("app")
   const [value, setValue] = useState("")
   const [commission, setCommission] = useState("")
   const [driverName, setDriverName] = useState("")
@@ -65,7 +65,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
 
   function resetForm() {
     setType("own")
-    setCategory("particular")
+    setCategory("app")
     setValue("")
     setCommission("")
     setDriverName("")
@@ -110,8 +110,10 @@ export function RideForm({ onSuccess }: RideFormProps) {
           onChange={(e) => setCategory(e.target.value as RideCategory)}
           className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
         >
-          <option value="particular">Particular</option>
+          <option value="app">App (Uber, 99, InDrive)</option>
+          <option value="taximeter">Taxímetro</option>
           <option value="cooperative">Cooperativa</option>
+          <option value="private">Particular</option>
           <option value="invoiced">Faturado</option>
         </select>
       </div>

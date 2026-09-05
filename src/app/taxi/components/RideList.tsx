@@ -14,8 +14,10 @@ interface RideListProps {
 
 function getCategoryLabel(category: RideCategory): string {
   const labels: Record<RideCategory, string> = {
-    particular: "Particular",
+    app: "App",
+    taximeter: "Taxímetro",
     cooperative: "Cooperativa",
+    private: "Particular",
     invoiced: "Faturado",
   }
   return labels[category] || category

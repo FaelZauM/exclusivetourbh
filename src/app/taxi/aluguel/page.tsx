@@ -30,7 +30,7 @@ export default function AluguelPage() {
 
   // Ride form states
   const [showAddRide, setShowAddRide] = useState(false)
-  const [rideCategory, setRideCategory] = useState<"particular" | "invoiced">("particular")
+  const [rideCategory, setRideCategory] = useState<"private" | "invoiced">("private")
   const [rideValue, setRideValue] = useState("")
   const [rideCommission, setRideCommission] = useState("")
   const [rideDriverName, setRideDriverName] = useState("")
@@ -627,7 +627,7 @@ export default function AluguelPage() {
                         className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
                         required
                       >
-                        <option value="particular">Particular</option>
+                        <option value="private">Particular</option>
                         <option value="invoiced">Faturado</option>
                       </select>
                     </div>

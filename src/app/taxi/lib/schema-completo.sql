@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS rides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('own', 'passed')),
-  category TEXT NOT NULL CHECK (category IN ('particular', 'cooperative', 'invoiced')),
+  category TEXT NOT NULL CHECK (category IN ('app', 'taximeter', 'cooperative', 'private', 'invoiced')),
   value DECIMAL(10,2) NOT NULL,
   commission DECIMAL(10,2),
   driver_name TEXT,
