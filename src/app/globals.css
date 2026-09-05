@@ -10,6 +10,14 @@
   --color-silver: #6B7280;
   --color-slate: #E5E7EB;
   --color-night: #1F2937;
+  --color-taxi-primary: #2563EB;
+  --color-taxi-primary-dark: #1D4ED8;
+  --color-taxi-success: #10B981;
+  --color-taxi-warning: #F59E0B;
+  --color-taxi-gray-900: #111827;
+  --color-taxi-gray-500: #6B7280;
+  --color-taxi-gray-200: #E5E7EB;
+  --color-taxi-gray-50: #F9FAFB;
 }
 
 @keyframes fade-in-up {
