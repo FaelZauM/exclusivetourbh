@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "../lib/auth-context"
 import { getSupabase } from "../lib/supabase"
 
@@ -9,6 +9,30 @@ export default function SettingsPage() {
   const [nome, setNome] = useState(user?.nome || "")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  const [dailyGoal, setDailyGoal] = useState("200")
+  const [weeklyGoal, setWeeklyGoal] = useState("1000")
+  const [goalsLoading, setGoalsLoading] = useState(false)
+  const [goalsSuccess, setGoalsSuccess] = useState(false)
+
+  useEffect(() => {
+    if (user?.role === "admin") {
+      fetchGoals()
+    }
+  }, [user])
+
+  async function fetchGoals() {
+    const { data } = await getSupabase()
+      .from("goals")
+      .select("*")
+      .limit(1)
+      .single()
+
+    if (data) {
+      setDailyGoal(data.daily_goal.toString())
+      setWeeklyGoal(data.weekly_goal.toString())
+    }
+  }
 
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault()
@@ -24,6 +48,39 @@ export default function SettingsPage() {
 
     setLoading(false)
     setSuccess(true)
+  }
+
+  async function handleSaveGoals(e: React.FormEvent) {
+    e.preventDefault()
+    setGoalsLoading(true)
+    setGoalsSuccess(false)
+
+    const { data } = await getSupabase()
+      .from("goals")
+      .select("id")
+      .limit(1)
+      .single()
+
+    if (data) {
+      await getSupabase()
+        .from("goals")
+        .update({
+          daily_goal: parseFloat(dailyGoal),
+          weekly_goal: parseFloat(weeklyGoal),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", data.id)
+    } else {
+      await getSupabase()
+        .from("goals")
+        .insert({
+          daily_goal: parseFloat(dailyGoal),
+          weekly_goal: parseFloat(weeklyGoal),
+        })
+    }
+
+    setGoalsLoading(false)
+    setGoalsSuccess(true)
   }
 
   return (
@@ -63,6 +120,49 @@ export default function SettingsPage() {
           {loading ? "Salvando..." : "Salvar"}
         </button>
       </form>
+
+      {user?.role === "admin" && (
+        <div className="mt-8">
+          <h3 className="font-semibold mb-4">Metas</h3>
+          <form onSubmit={handleSaveGoals} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Meta Diária (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={dailyGoal}
+                onChange={(e) => setDailyGoal(e.target.value)}
+                className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Meta Semanal (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={weeklyGoal}
+                onChange={(e) => setWeeklyGoal(e.target.value)}
+                className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                required
+              />
+            </div>
+
+            {goalsSuccess && (
+              <p className="text-taxi-success text-sm">Metas atualizadas!</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={goalsLoading}
+              className="w-full py-3 bg-taxi-success text-white font-medium rounded-xl hover:bg-opacity-90 disabled:opacity-50"
+            >
+              {goalsLoading ? "Salvando..." : "Salvar Metas"}
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className="mt-8">
         <button
