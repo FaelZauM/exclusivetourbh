@@ -5,19 +5,48 @@ import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { RideForm } from "../components/RideForm"
 import { RideList } from "../components/RideList"
-import type { Ride, User } from "../lib/types"
+import { ProgressBar } from "../components/ProgressBar"
+import type { Ride, User, Goal, DriverGoal } from "../lib/types"
 
 export default function RidesPage() {
   const { user } = useAuth()
   const [rides, setRides] = useState<Ride[]>([])
   const [drivers, setDrivers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [dailyGoal, setDailyGoal] = useState(200)
 
   useEffect(() => {
     if (user) {
       fetchRides()
+      fetchGoal()
     }
   }, [user])
+
+  async function fetchGoal() {
+    if (!user) return
+
+    if (user.role === "admin") {
+      const { data } = await getSupabase()
+        .from("goals")
+        .select("*")
+        .limit(1)
+        .single()
+
+      if (data) {
+        setDailyGoal(data.daily_goal)
+      }
+    } else {
+      const { data } = await getSupabase()
+        .from("driver_goals")
+        .select("*")
+        .eq("user_id", user.id)
+        .single()
+
+      if (data) {
+        setDailyGoal(data.personal_goal)
+      }
+    }
+  }
 
   async function fetchRides() {
     if (!user) return
@@ -145,6 +174,14 @@ export default function RidesPage() {
             </p>
           )}
         </div>
+      </div>
+
+      <div className="mb-6">
+        <ProgressBar
+          current={totalWithCommission}
+          goal={dailyGoal}
+          label="Meta Diária"
+        />
       </div>
 
       <RideForm onSuccess={fetchRides} />

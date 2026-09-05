@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import type { Ride, User, Fuel, RideCategory } from "../lib/types"
+import type { Ride, User, Fuel, RideCategory, Goal, DriverGoal } from "../lib/types"
 
 function getCategoryLabel(category: RideCategory): string {
   const labels: Record<RideCategory, string> = {
@@ -26,12 +26,43 @@ export default function HistoricoPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [typeFilter, setTypeFilter] = useState<"all" | "own" | "passed">("all")
+  const [weeklyGoal, setWeeklyGoal] = useState(1000)
+  const [monthlyGoal, setMonthlyGoal] = useState(4000)
 
   useEffect(() => {
     if (user) {
       fetchRides()
+      fetchGoals()
     }
   }, [user, selectedMonth, selectedYear])
+
+  async function fetchGoals() {
+    if (!user) return
+
+    if (user.role === "admin") {
+      const { data } = await getSupabase()
+        .from("goals")
+        .select("*")
+        .limit(1)
+        .single()
+
+      if (data) {
+        setWeeklyGoal(data.weekly_goal)
+        setMonthlyGoal(data.daily_goal * 30)
+      }
+    } else {
+      const { data } = await getSupabase()
+        .from("driver_goals")
+        .select("*")
+        .eq("user_id", user.id)
+        .single()
+
+      if (data) {
+        setWeeklyGoal(data.personal_goal * 5)
+        setMonthlyGoal(data.personal_goal * 30)
+      }
+    }
+  }
 
   async function fetchRides() {
     if (!user) return
@@ -150,6 +181,15 @@ export default function HistoricoPage() {
   const totalGasolina = fuelExpenses.reduce((sum, f) => sum + f.total_value, 0)
   const faturamentoLiquidoPosGasolina = faturamentoLiquido - totalGasolina
 
+  const now = new Date()
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - now.getDay())
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const weeklyEarnings = rides
+    .filter((r) => new Date(r.ride_date) >= startOfWeek)
+    .reduce((sum, ride) => sum + getEarnings(ride), 0)
+
   const monthNames = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
@@ -206,13 +246,24 @@ export default function HistoricoPage() {
         <p className="text-center text-taxi-gray-500">Carregando...</p>
       ) : (
         <>
+          <div className="mb-4">
+            <ProgressBar
+              current={weeklyEarnings}
+              goal={weeklyGoal}
+              label="Meta Semanal"
+            />
+          </div>
+
           <div className="mb-6">
             <ProgressBar
               current={faturamentoLiquidoPosGasolina}
-              goal={2000}
-              label="Meta do Mês"
+              goal={monthlyGoal}
+              label="Meta Mensal"
             />
-            <div className="p-4 bg-taxi-gray-50 rounded-xl mt-2 space-y-3">
+          </div>
+
+          <div className="mb-6">
+            <div className="p-4 bg-taxi-gray-50 rounded-xl space-y-3">
               <div>
                 <p className="text-sm text-taxi-gray-500">Faturamento Bruto</p>
                 <p className="text-xl font-bold text-taxi-gray-700">
