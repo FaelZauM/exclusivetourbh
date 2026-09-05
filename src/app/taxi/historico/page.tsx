@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import type { Ride, User, Fuel, RideCategory } from "../lib/types"
+import type { Ride, User, Fuel, RideCategory, Expense } from "../lib/types"
 
 function getCategoryLabel(category: RideCategory): string {
   const labels: Record<RideCategory, string> = {
@@ -22,12 +22,14 @@ export default function HistoricoPage() {
   const [rides, setRides] = useState<Ride[]>([])
   const [drivers, setDrivers] = useState<User[]>([])
   const [fuelExpenses, setFuelExpenses] = useState<Fuel[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [typeFilter, setTypeFilter] = useState<"all" | "own" | "passed">("all")
   const [carTypeFilter, setCarTypeFilter] = useState<"all" | "executivo" | "taxi">("all")
+  const [expenseFilter, setExpenseFilter] = useState<"all" | "gastos" | "gasolina">("all")
   const [weeklyGoal, setWeeklyGoal] = useState(1000)
   const [monthlyGoal, setMonthlyGoal] = useState(4000)
 
@@ -35,6 +37,7 @@ export default function HistoricoPage() {
     if (user) {
       fetchRides()
       fetchGoals()
+      fetchExpenses()
     }
   }, [user, selectedMonth, selectedYear])
 
@@ -64,6 +67,23 @@ export default function HistoricoPage() {
         setMonthlyGoal(data.personal_goal * 30)
       }
     }
+  }
+
+  async function fetchExpenses() {
+    if (!user) return
+
+    const startDate = new Date(selectedYear, selectedMonth - 1, 1)
+    const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59)
+
+    const { data } = await getSupabase()
+      .from("expenses")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("expense_date", startDate.toISOString())
+      .lte("expense_date", endDate.toISOString())
+      .order("expense_date", { ascending: false })
+
+    setExpenses(data || [])
   }
 
   async function fetchRides() {
@@ -317,6 +337,26 @@ export default function HistoricoPage() {
         </div>
       )}
 
+      <div className="flex gap-2 mb-6">
+        {([
+          ["all", "Todos"],
+          ["gasolina", "Gasolina"],
+          ["gastos", "Gastos"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setExpenseFilter(value)}
+            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
+              expenseFilter === value
+                ? "bg-taxi-orange text-white"
+                : "bg-taxi-gray-100 text-taxi-gray-600"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <p className="text-center text-taxi-gray-500">Carregando...</p>
       ) : (
@@ -481,6 +521,94 @@ export default function HistoricoPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {expenseFilter !== "all" && (
+            <div className="mt-6">
+              <h3 className="font-semibold mb-3">
+                {expenseFilter === "gasolina" ? "Abastecimentos" : "Gastos"}
+              </h3>
+              {expenseFilter === "gasolina" ? (
+                fuelExpenses.length === 0 ? (
+                  <p className="text-center text-taxi-gray-500 py-4">
+                    Nenhum abastecimento registrado.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {fuelExpenses.map((fuel) => (
+                      <div
+                        key={fuel.id}
+                        className="p-3 bg-white border border-taxi-gray-200 rounded-xl flex justify-between items-center"
+                      >
+                        <div>
+                          <p className="font-medium">⛽ Combustível</p>
+                          <p className="text-sm text-taxi-gray-500">
+                            {new Date(fuel.fuel_date).toLocaleDateString("pt-BR")}
+                            {fuel.liters && ` • ${fuel.liters}L`}
+                          </p>
+                        </div>
+                        <p className="font-bold text-taxi-danger">
+                          R$ {fuel.total_value.toFixed(2)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                expenses.length === 0 ? (
+                  <p className="text-center text-taxi-gray-500 py-4">
+                    Nenhum gasto registrado.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {expenses.map((expense) => {
+                      const categoryIcons: Record<string, string> = {
+                        fuel: "⛽",
+                        wash: "🚗",
+                        food: "🍔",
+                        maintenance: "🔧",
+                        other: "📦",
+                      }
+                      const categoryLabels: Record<string, string> = {
+                        fuel: "Combustível",
+                        wash: "Lavagem",
+                        food: "Alimentação",
+                        maintenance: "Manutenção",
+                        other: "Outros",
+                      }
+                      return (
+                        <div
+                          key={expense.id}
+                          className="p-3 bg-white border border-taxi-gray-200 rounded-xl flex justify-between items-center"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">
+                              {categoryIcons[expense.category] || "📦"}
+                            </span>
+                            <div>
+                              <p className="font-medium">
+                                {categoryLabels[expense.category] || expense.category}
+                              </p>
+                              {expense.description && (
+                                <p className="text-sm text-taxi-gray-500">
+                                  {expense.description}
+                                </p>
+                              )}
+                              <p className="text-xs text-taxi-gray-500">
+                                {new Date(expense.expense_date).toLocaleDateString("pt-BR")}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="font-bold text-taxi-danger">
+                            R$ {expense.value.toFixed(2)}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              )}
             </div>
           )}
         </>
