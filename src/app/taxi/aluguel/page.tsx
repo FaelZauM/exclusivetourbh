@@ -193,7 +193,15 @@ export default function AluguelPage() {
   }
 
   const selectedCarData = myCars.find((c) => c.id === selectedCar)
-  const totalRides = carRides.reduce((sum, ride) => sum + ride.value, 0)
+  
+  function getEarnings(ride: any): number {
+    if (ride.type === "passed" && ride.commission) {
+      return ride.value - ride.commission
+    }
+    return ride.value
+  }
+  
+  const totalRides = carRides.reduce((sum, ride) => sum + getEarnings(ride), 0)
 
   return (
     <main className="p-4">
@@ -474,7 +482,7 @@ export default function AluguelPage() {
                             {new Date(ride.ride_date).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
-                        <p className="font-bold text-taxi-success">R$ {ride.value.toFixed(2)}</p>
+                        <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
