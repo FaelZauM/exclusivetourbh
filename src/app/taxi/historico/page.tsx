@@ -27,6 +27,7 @@ export default function HistoricoPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [typeFilter, setTypeFilter] = useState<"all" | "own" | "passed">("all")
+  const [carTypeFilter, setCarTypeFilter] = useState<"all" | "executivo" | "taxi">("all")
   const [weeklyGoal, setWeeklyGoal] = useState(1000)
   const [monthlyGoal, setMonthlyGoal] = useState(4000)
 
@@ -178,6 +179,9 @@ export default function HistoricoPage() {
       const rideDate = new Date(r.ride_date)
       if (rideDate.getDate() !== selectedDay) return false
     }
+    if (typeFilter === "passed" && carTypeFilter !== "all") {
+      if (r.car_type !== carTypeFilter) return false
+    }
     return true
   })
 
@@ -276,7 +280,10 @@ export default function HistoricoPage() {
         ] as const).map(([value, label]) => (
           <button
             key={value}
-            onClick={() => setTypeFilter(value)}
+            onClick={() => {
+              setTypeFilter(value)
+              setCarTypeFilter("all")
+            }}
             className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
               typeFilter === value
                 ? "bg-taxi-gray-900 text-white"
@@ -287,6 +294,28 @@ export default function HistoricoPage() {
           </button>
         ))}
       </div>
+
+      {typeFilter === "passed" && (
+        <div className="flex gap-2 mb-6">
+          {([
+            ["all", "Todos"],
+            ["executivo", "Executivo"],
+            ["taxi", "Táxi"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setCarTypeFilter(value)}
+              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
+                carTypeFilter === value
+                  ? "bg-taxi-success text-white"
+                  : "bg-taxi-gray-100 text-taxi-gray-600"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <p className="text-center text-taxi-gray-500">Carregando...</p>
@@ -310,36 +339,59 @@ export default function HistoricoPage() {
 
           <div className="mb-6">
             <div className="p-4 bg-taxi-gray-50 rounded-xl space-y-3">
-              <div>
-                <p className="text-sm text-taxi-gray-500">Faturamento Bruto</p>
-                <p className="text-xl font-bold text-taxi-gray-700">
-                  R$ {faturamentoBruto.toFixed(2)}
-                </p>
-              </div>
-              <div className="border-t border-taxi-gray-200 pt-3">
-                <p className="text-sm text-taxi-gray-500">Faturamento Líquido</p>
-                <p className="text-xl font-bold text-taxi-success">
-                  R$ {faturamentoLiquido.toFixed(2)}
-                </p>
-              </div>
-              {user?.role === "admin" && totalGasolina > 0 && typeFilter !== "passed" && (
-                <div className="border-t border-taxi-gray-200 pt-3">
-                  <p className="text-sm text-taxi-gray-500">(-) Gasolina</p>
-                  <p className="text-xl font-bold text-taxi-danger">
-                    R$ {totalGasolina.toFixed(2)}
-                  </p>
-                </div>
-              )}
-              {user?.role === "admin" && totalGasolina > 0 && typeFilter !== "passed" && (
-                <div className="border-t border-taxi-gray-200 pt-3">
-                  <p className="text-sm text-taxi-gray-500">Líquido pós-gasolina</p>
-                  <p className="text-2xl font-bold text-taxi-success">
-                    R$ {faturamentoLiquidoPosGasolina.toFixed(2)}
-                  </p>
-                </div>
+              {typeFilter === "passed" ? (
+                <>
+                  <div>
+                    <p className="text-sm text-taxi-gray-500">Total Passado</p>
+                    <p className="text-2xl font-bold text-taxi-success">
+                      R$ {faturamentoLiquido.toFixed(2)}
+                    </p>
+                  </div>
+                  {carTypeFilter !== "all" && (
+                    <div className="border-t border-taxi-gray-200 pt-3">
+                      <p className="text-sm text-taxi-gray-500">
+                        {carTypeFilter === "executivo" ? "Executivo" : "Táxi"}
+                      </p>
+                      <p className="text-xl font-bold text-taxi-gray-700">
+                        R$ {filteredRides.reduce((sum, ride) => sum + getEarnings(ride), 0).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm text-taxi-gray-500">Faturamento Bruto</p>
+                    <p className="text-xl font-bold text-taxi-gray-700">
+                      R$ {faturamentoBruto.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="border-t border-taxi-gray-200 pt-3">
+                    <p className="text-sm text-taxi-gray-500">Faturamento Líquido</p>
+                    <p className="text-xl font-bold text-taxi-success">
+                      R$ {faturamentoLiquido.toFixed(2)}
+                    </p>
+                  </div>
+                  {user?.role === "admin" && totalGasolina > 0 && (
+                    <div className="border-t border-taxi-gray-200 pt-3">
+                      <p className="text-sm text-taxi-gray-500">(-) Gasolina</p>
+                      <p className="text-xl font-bold text-taxi-danger">
+                        R$ {totalGasolina.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                  {user?.role === "admin" && totalGasolina > 0 && (
+                    <div className="border-t border-taxi-gray-200 pt-3">
+                      <p className="text-sm text-taxi-gray-500">Líquido pós-gasolina</p>
+                      <p className="text-2xl font-bold text-taxi-success">
+                        R$ {faturamentoLiquidoPosGasolina.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
               <p className="text-xs text-taxi-gray-500">
-                {filteredRides.length} corridas{fuelExpenses.length > 0 && ` • ${fuelExpenses.length} abastecimentos`}
+                {filteredRides.length} corridas{fuelExpenses.length > 0 && typeFilter !== "passed" && ` • ${fuelExpenses.length} abastecimentos`}
               </p>
             </div>
           </div>
@@ -364,6 +416,15 @@ export default function HistoricoPage() {
                           <span className="text-xs text-taxi-gray-500">
                             {ride.type === "own" ? "Particular" : "Passada"}
                           </span>
+                          {ride.car_type && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              ride.car_type === "executivo" 
+                                ? "bg-purple-100 text-purple-800" 
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}>
+                              {ride.car_type === "executivo" ? "Executivo" : "Táxi"}
+                            </span>
+                          )}
                           {ride.user_id !== user?.id && (
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                               👤 {getDriverName(ride.user_id)}

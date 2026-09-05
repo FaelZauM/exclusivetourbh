@@ -13,6 +13,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
   const { user } = useAuth()
   const [type, setType] = useState<RideType>("own")
   const [category, setCategory] = useState<RideCategory>("app")
+  const [carType, setCarType] = useState<"executivo" | "taxi">("executivo")
   const [value, setValue] = useState("")
   const [commission, setCommission] = useState("")
   const [driverName, setDriverName] = useState("")
@@ -29,6 +30,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
   const showCommission = type === "passed"
   const showDispatcher = category === "cooperative"
   const showCompanyName = category === "invoiced"
+  const showCarType = type === "passed"
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,6 +46,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
       user_id: user.id,
       type,
       category,
+      car_type: showCarType ? carType : null,
       value: parseFloat(value),
       commission: showCommission && commission ? parseFloat(commission) : null,
       driver_name: showCommission ? driverName : null,
@@ -66,6 +69,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
   function resetForm() {
     setType("own")
     setCategory("app")
+    setCarType("executivo")
     setValue("")
     setCommission("")
     setDriverName("")
@@ -102,6 +106,29 @@ export function RideForm({ onSuccess }: RideFormProps) {
           Passada
         </button>
       </div>
+
+      {showCarType && (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setCarType("executivo")}
+            className={`flex-1 py-2 rounded-lg ${
+              carType === "executivo" ? "bg-taxi-success text-white" : "bg-white border border-taxi-gray-200"
+            }`}
+          >
+            Executivo
+          </button>
+          <button
+            type="button"
+            onClick={() => setCarType("taxi")}
+            className={`flex-1 py-2 rounded-lg ${
+              carType === "taxi" ? "bg-taxi-success text-white" : "bg-white border border-taxi-gray-200"
+            }`}
+          >
+            Táxi
+          </button>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium mb-1">Categoria</label>

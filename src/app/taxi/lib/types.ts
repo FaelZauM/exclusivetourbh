@@ -11,6 +11,7 @@ export interface Ride {
   user_id: string
   type: "own" | "passed"
   category: "app" | "taximeter" | "cooperative" | "private" | "invoiced"
+  car_type?: "executivo" | "taxi"
   value: number
   commission?: number
   driver_name?: string
