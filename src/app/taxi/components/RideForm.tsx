@@ -89,7 +89,10 @@ export function RideForm({ onSuccess }: RideFormProps) {
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => setType("own")}
+          onClick={() => {
+            setType("own")
+            setCategory("app")
+          }}
           className={`flex-1 py-2 rounded-lg ${
             type === "own" ? "bg-taxi-primary text-white" : "bg-white border border-taxi-gray-200"
           }`}
@@ -98,7 +101,10 @@ export function RideForm({ onSuccess }: RideFormProps) {
         </button>
         <button
           type="button"
-          onClick={() => setType("passed")}
+          onClick={() => {
+            setType("passed")
+            setCategory("private")
+          }}
           className={`flex-1 py-2 rounded-lg ${
             type === "passed" ? "bg-taxi-primary text-white" : "bg-white border border-taxi-gray-200"
           }`}
@@ -137,11 +143,20 @@ export function RideForm({ onSuccess }: RideFormProps) {
           onChange={(e) => setCategory(e.target.value as RideCategory)}
           className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
         >
-          <option value="app">App (Uber, 99, InDrive)</option>
-          <option value="taximeter">Taxímetro</option>
-          <option value="cooperative">Cooperativa</option>
-          <option value="private">Particular</option>
-          <option value="invoiced">Faturado</option>
+          {type === "passed" ? (
+            <>
+              <option value="private">Particular</option>
+              <option value="invoiced">Faturado</option>
+            </>
+          ) : (
+            <>
+              <option value="app">App (Uber, 99, InDrive)</option>
+              <option value="taximeter">Taxímetro</option>
+              <option value="cooperative">Cooperativa</option>
+              <option value="private">Particular</option>
+              <option value="invoiced">Faturado</option>
+            </>
+          )}
         </select>
       </div>
 
