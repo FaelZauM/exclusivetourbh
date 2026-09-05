@@ -135,12 +135,14 @@ export default function HistoricoPage() {
                         <span className="text-xs text-taxi-gray-500">
                           {ride.type === "own" ? "Própria" : "Passada"}
                         </span>
+                        {ride.user_id !== user?.id && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                            👤 {getDriverName(ride.user_id)}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-taxi-gray-600 mt-1">
-                        {getDriverName(ride.user_id)}
-                      </p>
                       {ride.passenger_name && (
-                        <p className="text-sm text-taxi-gray-500">
+                        <p className="text-sm text-taxi-gray-500 mt-1">
                           Passageiro: {ride.passenger_name}
                         </p>
                       )}
