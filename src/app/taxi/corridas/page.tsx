@@ -118,7 +118,7 @@ export default function RidesPage() {
   }
 
   const totalOwn = rides
-    .filter((r) => r.user_id === user?.id)
+    .filter((r) => r.user_id === user?.id && !r.added_by_admin)
     .reduce((sum, ride) => sum + getEarnings(ride), 0)
 
   const totalDrivers = rides
