@@ -33,6 +33,17 @@ export default function HistoricoPage() {
   const [weeklyGoal, setWeeklyGoal] = useState(1000)
   const [monthlyGoal, setMonthlyGoal] = useState(4000)
 
+  const [editingRide, setEditingRide] = useState<Ride | null>(null)
+  const [editValue, setEditValue] = useState("")
+  const [editCommission, setEditCommission] = useState("")
+  const [editPassengerName, setEditPassengerName] = useState("")
+  const [editCompanyName, setEditCompanyName] = useState("")
+  const [editStartLocation, setEditStartLocation] = useState("")
+  const [editEndLocation, setEditEndLocation] = useState("")
+  const [editDate, setEditDate] = useState("")
+  const [editTime, setEditTime] = useState("")
+  const [editLoading, setEditLoading] = useState(false)
+
   useEffect(() => {
     if (user) {
       fetchRides()
@@ -157,6 +168,57 @@ export default function HistoricoPage() {
     setRides((prev) =>
       prev.map((r) => (r.id === ride.id ? { ...r, paid_to_driver: !r.paid_to_driver } : r))
     )
+  }
+
+  function startEdit(ride: Ride) {
+    setEditingRide(ride)
+    setEditValue(ride.value.toString())
+    setEditCommission(ride.commission?.toString() || "")
+    setEditPassengerName(ride.passenger_name || "")
+    setEditCompanyName(ride.company_name || "")
+    setEditStartLocation(ride.start_location || "")
+    setEditEndLocation(ride.end_location || "")
+    const rideDate = new Date(ride.ride_date)
+    setEditDate(rideDate.toISOString().split("T")[0])
+    setEditTime(rideDate.toTimeString().slice(0, 5))
+  }
+
+  function cancelEdit() {
+    setEditingRide(null)
+  }
+
+  async function saveEdit() {
+    if (!editingRide) return
+    setEditLoading(true)
+
+    const rideDateTime = editDate && editTime
+      ? new Date(`${editDate}T${editTime}`).toISOString()
+      : editingRide.ride_date
+
+    const { error } = await getSupabase()
+      .from("rides")
+      .update({
+        value: parseFloat(editValue),
+        commission: editCommission ? parseFloat(editCommission) : null,
+        passenger_name: editPassengerName || null,
+        company_name: editCompanyName || null,
+        start_location: editStartLocation || null,
+        end_location: editEndLocation || null,
+        ride_date: rideDateTime,
+      })
+      .eq("id", editingRide.id)
+
+    setEditLoading(false)
+
+    if (!error) {
+      setEditingRide(null)
+      fetchRides()
+    }
+  }
+
+  async function deleteRide(id: string) {
+    await getSupabase().from("rides").delete().eq("id", id)
+    fetchRides()
   }
 
   function getEarnings(ride: Ride): number {
@@ -469,75 +531,199 @@ export default function HistoricoPage() {
                     key={ride.id}
                     className="p-4 bg-white border border-taxi-gray-200 rounded-xl"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">{getCategoryLabel(ride.category)}</span>
-                          <span className="text-xs text-taxi-gray-500">
-                            {ride.type === "own" ? "Particular" : "Passada"}
-                          </span>
-                          {ride.car_type && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              ride.car_type === "executivo" 
-                                ? "bg-purple-100 text-purple-800" 
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}>
-                              {ride.car_type === "executivo" ? "Executivo" : "Táxi"}
-                            </span>
-                          )}
-                          {ride.user_id !== user?.id && (
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                              👤 {getDriverName(ride.user_id)}
-                            </span>
+                    {editingRide?.id === ride.id ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-taxi-gray-500">Valor (R$)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                            />
+                          </div>
+                          {ride.type === "passed" && (
+                            <div>
+                              <label className="text-xs text-taxi-gray-500">Comissão (R$)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={editCommission}
+                                onChange={(e) => setEditCommission(e.target.value)}
+                                className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                              />
+                            </div>
                           )}
                         </div>
-                        {ride.company_name && (
-                          <p className="text-sm text-taxi-gray-500 mt-1">
-                            Empresa: {ride.company_name}
-                          </p>
-                        )}
-                        {ride.passenger_name && (
-                          <p className="text-sm text-taxi-gray-500 mt-1">
-                            Passageiro: {ride.passenger_name}
-                          </p>
-                        )}
-                        {(ride.start_location || ride.end_location) && (
-                          <p className="text-sm text-taxi-gray-500">
-                            {ride.start_location} → {ride.end_location}
-                          </p>
-                        )}
-                        <p className="text-xs text-taxi-gray-500 mt-1">
-                          {new Date(ride.ride_date).toLocaleDateString("pt-BR")} {new Date(ride.ride_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                        {repassed > 0 && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <button
-                              onClick={() => togglePaidToDriver(ride)}
-                              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                                ride.paid_to_driver
-                                  ? "bg-taxi-success text-white border-taxi-success"
-                                  : "bg-white text-taxi-gray-600 border-taxi-gray-300"
-                              }`}
-                            >
-                              {ride.paid_to_driver ? "Pago ao motorista" : "Marcar como pago"}
-                            </button>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-taxi-gray-500">Data</label>
+                            <input
+                              type="date"
+                              value={editDate}
+                              onChange={(e) => setEditDate(e.target.value)}
+                              className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-taxi-gray-500">Hora</label>
+                            <input
+                              type="time"
+                              value={editTime}
+                              onChange={(e) => setEditTime(e.target.value)}
+                              className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-taxi-gray-500">Passageiro</label>
+                          <input
+                            type="text"
+                            value={editPassengerName}
+                            onChange={(e) => setEditPassengerName(e.target.value)}
+                            className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                          />
+                        </div>
+                        {ride.category === "invoiced" && (
+                          <div>
+                            <label className="text-xs text-taxi-gray-500">Empresa</label>
+                            <input
+                              type="text"
+                              value={editCompanyName}
+                              onChange={(e) => setEditCompanyName(e.target.value)}
+                              className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                            />
                           </div>
                         )}
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
-                        {ride.commission && !ride.received_with_client && (
-                          <p className="text-xs text-taxi-gray-500">
-                            Total: R$ {ride.value.toFixed(2)}
-                          </p>
+                        {["cooperative", "invoiced"].includes(ride.category) && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs text-taxi-gray-500">Início</label>
+                              <input
+                                type="text"
+                                value={editStartLocation}
+                                onChange={(e) => setEditStartLocation(e.target.value)}
+                                className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-taxi-gray-500">Destino</label>
+                              <input
+                                type="text"
+                                value={editEndLocation}
+                                onChange={(e) => setEditEndLocation(e.target.value)}
+                                className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                              />
+                            </div>
+                          </div>
                         )}
-                        {repassed > 0 && (
-                          <p className="text-xs text-taxi-orange font-medium">
-                            Repassou: R$ {repassed.toFixed(2)}
-                          </p>
-                        )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={saveEdit}
+                            disabled={editLoading}
+                            className="flex-1 py-2 bg-taxi-success text-white text-sm font-medium rounded-lg"
+                          >
+                            {editLoading ? "Salvando..." : "Salvar"}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="flex-1 py-2 bg-taxi-gray-200 text-taxi-gray-600 text-sm font-medium rounded-lg"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{getCategoryLabel(ride.category)}</span>
+                            <span className="text-xs text-taxi-gray-500">
+                              {ride.type === "own" ? "Particular" : "Passada"}
+                            </span>
+                            {ride.car_type && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                ride.car_type === "executivo" 
+                                  ? "bg-purple-100 text-purple-800" 
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}>
+                                {ride.car_type === "executivo" ? "Executivo" : "Táxi"}
+                              </span>
+                            )}
+                            {ride.user_id !== user?.id && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                                👤 {getDriverName(ride.user_id)}
+                              </span>
+                            )}
+                          </div>
+                          {ride.company_name && (
+                            <p className="text-sm text-taxi-gray-500 mt-1">
+                              Empresa: {ride.company_name}
+                            </p>
+                          )}
+                          {ride.passenger_name && (
+                            <p className="text-sm text-taxi-gray-500 mt-1">
+                              Passageiro: {ride.passenger_name}
+                            </p>
+                          )}
+                          {(ride.start_location || ride.end_location) && (
+                            <p className="text-sm text-taxi-gray-500">
+                              {ride.start_location} → {ride.end_location}
+                            </p>
+                          )}
+                          <p className="text-xs text-taxi-gray-500 mt-1">
+                            {new Date(ride.ride_date).toLocaleDateString("pt-BR")} {new Date(ride.ride_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                          {repassed > 0 && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <button
+                                onClick={() => togglePaidToDriver(ride)}
+                                className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                                  ride.paid_to_driver
+                                    ? "bg-taxi-success text-white border-taxi-success"
+                                    : "bg-white text-taxi-gray-600 border-taxi-gray-300"
+                                }`}
+                              >
+                                {ride.paid_to_driver ? "Pago ao motorista" : "Marcar como pago"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
+                          {ride.commission && !ride.received_with_client && (
+                            <p className="text-xs text-taxi-gray-500">
+                              Total: R$ {ride.value.toFixed(2)}
+                            </p>
+                          )}
+                          {repassed > 0 && (
+                            <p className="text-xs text-taxi-orange font-medium">
+                              Repassou: R$ {repassed.toFixed(2)}
+                            </p>
+                          )}
+                          <div className="flex gap-1 mt-2 justify-end">
+                            <button
+                              onClick={() => startEdit(ride)}
+                              className="p-2 text-taxi-gray-500 hover:text-taxi-primary"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => deleteRide(ride.id)}
+                              className="p-2 text-taxi-gray-500 hover:text-red-500"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}
