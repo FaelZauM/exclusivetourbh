@@ -15,11 +15,20 @@ const adminNavItems = [
   { href: "/taxi/aluguel", label: "Aluguel", icon: "🔑" },
 ]
 
+const driverNavItems = [
+  { href: "/taxi/convites", label: "Convites", icon: "📩" },
+]
+
 export function BottomNav() {
   const pathname = usePathname()
   const { user } = useAuth()
 
-  const items = user?.role === "admin" ? [...navItems, ...adminNavItems] : navItems
+  let items = navItems
+  if (user?.role === "admin") {
+    items = [...navItems, ...adminNavItems]
+  } else {
+    items = [...navItems, ...driverNavItems]
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-taxi-gray-200 px-4 py-2">

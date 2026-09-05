@@ -10,6 +10,7 @@ export default function AluguelPage() {
   const { user } = useAuth()
   const [myCars, setMyCars] = useState<DriverCar[]>([])
   const [drivers, setDrivers] = useState<User[]>([])
+  const [invitations, setInvitations] = useState<any[]>([])
   const [selectedCar, setSelectedCar] = useState<string | null>(null)
   const [rentalGoal, setRentalGoal] = useState<RentalGoal | null>(null)
   const [carRides, setCarRides] = useState<Ride[]>([])
@@ -56,6 +57,14 @@ export default function AluguelPage() {
       .eq("role", "driver")
 
     setDrivers(driversData || [])
+
+    const { data: invitationsData } = await getSupabase()
+      .from("driver_invitations")
+      .select("*")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false })
+
+    setInvitations(invitationsData || [])
     setLoading(false)
   }
 
@@ -219,6 +228,42 @@ export default function AluguelPage() {
             Enviar Convite
           </button>
         </form>
+      )}
+
+      {invitations.length > 0 && (
+        <div className="mb-6">
+          <h3 className="font-semibold mb-3">Convites Enviados</h3>
+          <div className="space-y-2">
+            {invitations.map((inv) => (
+              <div
+                key={inv.id}
+                className="flex items-center justify-between p-3 bg-white border border-taxi-gray-200 rounded-xl"
+              >
+                <div>
+                  <p className="font-medium text-sm">{inv.email}</p>
+                  <p className="text-xs text-taxi-gray-500">
+                    {new Date(inv.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    inv.status === "accepted"
+                      ? "bg-green-100 text-green-800"
+                      : inv.status === "pending"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {inv.status === "accepted"
+                    ? "✓ Aceito"
+                    : inv.status === "pending"
+                    ? "Pendente"
+                    : "Expirado"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {loading ? (
