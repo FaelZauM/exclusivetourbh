@@ -22,6 +22,7 @@ export interface Ride {
   created_at: string
   added_by_admin?: boolean
   received_with_client?: boolean
+  paid_to_driver?: boolean
 }
 
 export interface Fuel {
