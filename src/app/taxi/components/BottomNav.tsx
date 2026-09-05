@@ -12,7 +12,7 @@ const navItems = [
 ]
 
 const adminNavItems = [
-  { href: "/taxi/aluguel", label: "Aluguel", icon: "🚗" },
+  { href: "/taxi/aluguel", label: "Aluguel", icon: "🔑" },
 ]
 
 export function BottomNav() {

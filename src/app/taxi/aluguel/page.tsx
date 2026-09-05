@@ -272,7 +272,7 @@ export default function AluguelPage() {
                     value={licensePlate}
                     onChange={(e) => setLicensePlate(e.target.value)}
                     className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
-                    placeholder="Ex: FWV0B33"
+                    placeholder="Ex: AAA0A00"
                     required
                   />
                 </div>
