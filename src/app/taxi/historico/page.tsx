@@ -26,7 +26,7 @@ export default function HistoricoPage() {
     const startDate = new Date(selectedYear, selectedMonth - 1, 1)
     const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59)
 
-    const { data } = await getSupabase()
+    const { data: myRides } = await getSupabase()
       .from("rides")
       .select("*")
       .eq("user_id", user.id)
@@ -34,7 +34,33 @@ export default function HistoricoPage() {
       .lte("ride_date", endDate.toISOString())
       .order("ride_date", { ascending: false })
 
-    setRides(data || [])
+    let allRides = myRides || []
+
+    if (user.role === "admin") {
+      const { data: carsData } = await getSupabase()
+        .from("driver_cars")
+        .select("driver_id")
+        .eq("owner_id", user.id)
+        .eq("active", true)
+
+      if (carsData && carsData.length > 0) {
+        const driverIds = carsData.map((c) => c.driver_id)
+        const { data: driverRides } = await getSupabase()
+          .from("rides")
+          .select("*")
+          .in("user_id", driverIds)
+          .gte("ride_date", startDate.toISOString())
+          .lte("ride_date", endDate.toISOString())
+          .order("ride_date", { ascending: false })
+
+        if (driverRides) {
+          allRides = [...allRides, ...driverRides]
+          allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
+        }
+      }
+    }
+
+    setRides(allRides)
 
     const { data: driversData } = await getSupabase()
       .from("users")
@@ -61,7 +87,15 @@ export default function HistoricoPage() {
     return driver?.nome || "Desconhecido"
   }
 
-  const monthTotal = rides.reduce((sum, ride) => sum + getEarnings(ride), 0)
+  const monthTotal = rides.reduce((sum, ride) => {
+    if (ride.user_id === user?.id) {
+      return sum + getEarnings(ride)
+    }
+    if (ride.type === "passed" && ride.commission && !ride.received_with_client) {
+      return sum + (ride.value - ride.commission)
+    }
+    return sum
+  }, 0)
   const monthGoal = 2000
 
   const monthNames = [
@@ -113,6 +147,9 @@ export default function HistoricoPage() {
               </p>
               <p className="text-xs text-taxi-gray-500 mt-1">
                 {rides.length} corridas registradas
+                {user?.role === "admin" && (
+                  <span className="ml-2">(inclui motoristas)</span>
+                )}
               </p>
             </div>
           </div>
