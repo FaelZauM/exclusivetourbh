@@ -540,18 +540,13 @@ export default function HistoricoPage() {
             </div>
           )}
 
-          {expenseFilter !== "all" && (
-            <div className="mt-6">
+          <div className="mt-6">
               <h3 className="font-semibold mb-3">
-                {expenseFilter === "gasolina" ? "Abastecimentos" : "Gastos"}
+                {expenseFilter === "gasolina" ? "Abastecimentos" : expenseFilter === "gastos" ? "Gastos" : "Abastecimentos e Gastos"}
               </h3>
-              {expenseFilter === "gasolina" ? (
-                filteredFuelExpenses.length === 0 ? (
-                  <p className="text-center text-taxi-gray-500 py-4">
-                    Nenhum abastecimento registrado.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
+              {expenseFilter === "gasolina" || expenseFilter === "all" ? (
+                filteredFuelExpenses.length > 0 && (
+                  <div className="space-y-2 mb-4">
                     {filteredFuelExpenses.map((fuel) => (
                       <div
                         key={fuel.id}
@@ -571,12 +566,9 @@ export default function HistoricoPage() {
                     ))}
                   </div>
                 )
-              ) : (
-                filteredExpenses.length === 0 ? (
-                  <p className="text-center text-taxi-gray-500 py-4">
-                    Nenhum gasto registrado.
-                  </p>
-                ) : (
+              ) : null}
+              {expenseFilter === "gastos" || expenseFilter === "all" ? (
+                filteredExpenses.length > 0 ? (
                   <div className="space-y-2">
                     {filteredExpenses.map((expense) => {
                       const categoryIcons: Record<string, string> = {
@@ -623,10 +615,25 @@ export default function HistoricoPage() {
                       )
                     })}
                   </div>
+                ) : (
+                  (expenseFilter === "all" && filteredFuelExpenses.length === 0) && (
+                    <p className="text-center text-taxi-gray-500 py-4">
+                      Nenhum gasto registrado.
+                    </p>
+                  )
                 )
+              ) : null}
+              {expenseFilter === "gasolina" && filteredFuelExpenses.length === 0 && (
+                <p className="text-center text-taxi-gray-500 py-4">
+                  Nenhum abastecimento registrado.
+                </p>
+              )}
+              {expenseFilter === "gastos" && filteredExpenses.length === 0 && (
+                <p className="text-center text-taxi-gray-500 py-4">
+                  Nenhum gasto registrado.
+                </p>
               )}
             </div>
-          )}
         </>
       )}
     </main>
