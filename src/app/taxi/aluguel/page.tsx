@@ -41,6 +41,16 @@ export default function AluguelPage() {
   const [rideDate, setRideDate] = useState("")
   const [rideTime, setRideTime] = useState("")
 
+  // Edit ride states
+  const [editingRide, setEditingRide] = useState<Ride | null>(null)
+  const [editValue, setEditValue] = useState("")
+  const [editCommission, setEditCommission] = useState("")
+  const [editPassengerName, setEditPassengerName] = useState("")
+  const [editStartLocation, setEditStartLocation] = useState("")
+  const [editEndLocation, setEditEndLocation] = useState("")
+  const [editDate, setEditDate] = useState("")
+  const [editTime, setEditTime] = useState("")
+
   useEffect(() => {
     if (user) {
       fetchData()
@@ -236,6 +246,60 @@ export default function AluguelPage() {
       setShowAddRide(false)
       fetchCarData()
     }
+  }
+
+  function startEditingRide(ride: Ride) {
+    setEditingRide(ride)
+    setEditValue(ride.value.toString())
+    setEditCommission(ride.commission?.toString() || "")
+    setEditPassengerName(ride.passenger_name || "")
+    setEditStartLocation(ride.start_location || "")
+    setEditEndLocation(ride.end_location || "")
+    const rideDateTime = new Date(ride.ride_date)
+    setEditDate(rideDateTime.toISOString().split("T")[0])
+    setEditTime(rideDateTime.toTimeString().slice(0, 5))
+  }
+
+  function cancelEditingRide() {
+    setEditingRide(null)
+    setEditValue("")
+    setEditCommission("")
+    setEditPassengerName("")
+    setEditStartLocation("")
+    setEditEndLocation("")
+    setEditDate("")
+    setEditTime("")
+  }
+
+  async function saveEditingRide() {
+    if (!editingRide) return
+
+    const rideDateTime = editDate && editTime 
+      ? new Date(`${editDate}T${editTime}`).toISOString()
+      : editingRide.ride_date
+
+    const { error } = await getSupabase()
+      .from("rides")
+      .update({
+        value: parseFloat(editValue),
+        commission: editCommission ? parseFloat(editCommission) : null,
+        passenger_name: editPassengerName || null,
+        start_location: editStartLocation || null,
+        end_location: editEndLocation || null,
+        ride_date: rideDateTime,
+      })
+      .eq("id", editingRide.id)
+
+    if (!error) {
+      cancelEditingRide()
+      fetchCarData()
+    }
+  }
+
+  async function handleDeleteRide(rideId: string) {
+    if (!confirm("Tem certeza que deseja excluir esta corrida?")) return
+    await getSupabase().from("rides").delete().eq("id", rideId)
+    fetchCarData()
   }
 
   if (user?.role !== "admin") {
@@ -670,8 +734,13 @@ export default function AluguelPage() {
                         className="p-3 bg-white border border-taxi-gray-200 rounded-xl"
                       >
                         <div className="flex justify-between items-start">
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium">{ride.category}</p>
+                            {ride.passenger_name && (
+                              <p className="text-sm text-taxi-gray-500">
+                                Passageiro: {ride.passenger_name}
+                              </p>
+                            )}
                             {(ride.start_location || ride.end_location) && (
                               <p className="text-sm text-taxi-gray-500">
                                 {ride.start_location} → {ride.end_location}
@@ -688,6 +757,20 @@ export default function AluguelPage() {
                                 Total: R$ {ride.value.toFixed(2)}
                               </p>
                             )}
+                            <div className="flex gap-2 mt-2 justify-end">
+                              <button
+                                onClick={() => startEditingRide(ride)}
+                                className="text-xs text-taxi-primary font-medium"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRide(ride.id)}
+                                className="text-xs text-red-500"
+                              >
+                                Excluir
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -705,6 +788,97 @@ export default function AluguelPage() {
             </>
           )}
         </>
+      )}
+
+      {editingRide && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+            <h3 className="font-semibold text-lg">Editar Corrida</h3>
+            <div>
+              <label className="block text-sm font-medium mb-1">Valor (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+              />
+            </div>
+            {editingRide.type === "passed" && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Valor do Motorista (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editCommission}
+                  onChange={(e) => setEditCommission(e.target.value)}
+                  className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Data</label>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Hora</label>
+                <input
+                  type="time"
+                  value={editTime}
+                  onChange={(e) => setEditTime(e.target.value)}
+                  className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Origem</label>
+              <input
+                type="text"
+                value={editStartLocation}
+                onChange={(e) => setEditStartLocation(e.target.value)}
+                className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Destino</label>
+              <input
+                type="text"
+                value={editEndLocation}
+                onChange={(e) => setEditEndLocation(e.target.value)}
+                className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Passageiro</label>
+              <input
+                type="text"
+                value={editPassengerName}
+                onChange={(e) => setEditPassengerName(e.target.value)}
+                className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={saveEditingRide}
+                className="flex-1 py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={cancelEditingRide}
+                className="flex-1 py-3 bg-taxi-gray-200 text-taxi-gray-700 font-medium rounded-xl hover:bg-taxi-gray-300"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   )
