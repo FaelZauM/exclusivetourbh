@@ -139,6 +139,7 @@ export default function RidesPage() {
           <RideList 
             rides={rides} 
             onDelete={handleDelete} 
+            onRefresh={fetchRides}
             currentUserId={user?.id}
             drivers={drivers}
           />
