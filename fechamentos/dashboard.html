@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Financeiro 2026</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Inter, -apple-system, sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 40px 24px; }
+  .container { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 14px; margin-bottom: 32px; }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .card-destaque { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 20px; }
+  .card-destaque .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card-destaque .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .card-destaque .value.positive { color: #4ade80; }
+  .card-destaque .value.negative { color: #f87171; }
+  .card-destaque .value.neutral { color: #fbbf24; }
+  .card-destaque .sub { font-size: 12px; color: #666; margin-top: 2px; }
+
+  .meta-bar { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 20px; margin-bottom: 32px; }
+  .meta-bar .header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .meta-bar .label { font-size: 13px; color: #888; }
+  .meta-bar .meta-label { font-size: 13px; color: #666; }
+  .progress-bg { background: #2a2a2a; border-radius: 100px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, #4ade80, #fbbf24, #f87171); transition: width 0.5s; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #222; }
+  td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #1a1a1a; }
+  tr:hover td { background: #111; }
+  .mes-cell { color: #fff; font-weight: 600; }
+  .valor { font-weight: 600; text-align: right; }
+  .positive { color: #4ade80; }
+  .negative { color: #f87171; }
+  .neutral { color: #fbbf24; }
+  .footer td { border-bottom: none; padding-top: 16px; font-weight: 700; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 Dashboard Financeiro 2026</h1>
+  <p class="subtitle">Receita (Agendamentos) vs Despesas (Contas) · 27/06/2026, 13:41:28</p>
+
+  <div class="cards">
+    <div class="card-destaque">
+      <div class="label">Receita Total</div>
+      <div class="value neutral">R$ 218319,71</div>
+      <div class="sub">Meta: R$ 350.000 · 62.4%</div>
+    </div>
+    <div class="card-destaque">
+      <div class="label">Despesas Totais</div>
+      <div class="value negative">R$ 98464,51</div>
+    </div>
+    <div class="card-destaque">
+      <div class="label">Saldo Líquido</div>
+      <div class="value positive">R$ 119855,20</div>
+      <div class="sub">Superávit</div>
+    </div>
+  </div>
+
+  <div class="meta-bar">
+    <div class="header">
+      <span class="label">Progresso da Meta (R$ 350.000)</span>
+      <span class="meta-label">62.4% · Faltam R$ 131680,29</span>
+    </div>
+    <div class="progress-bg"><div class="progress-fill" style="width:62.377059999999986%"></div></div>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>Mês</th>
+      <th style="text-align:right">Receita</th>
+      <th style="text-align:right">Despesas</th>
+      <th style="text-align:right">Saldo</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td class="mes-cell">Janeiro/ 26</td>
+        <td class="valor neutral">R$ 18836,09</td>
+        <td class="valor negative">R$ 0,00</td>
+        <td class="valor positive">R$ 18836,09</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Fevereiro/26</td>
+        <td class="valor neutral">R$ 17738,60</td>
+        <td class="valor negative">R$ 0,00</td>
+        <td class="valor positive">R$ 17738,60</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Março/26</td>
+        <td class="valor neutral">R$ 26129,84</td>
+        <td class="valor negative">R$ 0,00</td>
+        <td class="valor positive">R$ 26129,84</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Abril/ 26</td>
+        <td class="valor neutral">R$ 27002,26</td>
+        <td class="valor negative">R$ 0,00</td>
+        <td class="valor positive">R$ 27002,26</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Maio /26</td>
+        <td class="valor neutral">R$ 71364,25</td>
+        <td class="valor negative">R$ 0,00</td>
+        <td class="valor positive">R$ 71364,25</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Junho /26</td>
+        <td class="valor neutral">R$ 57248,67</td>
+        <td class="valor negative">R$ 0,00</td>
+        <td class="valor positive">R$ 57248,67</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Janeiro</td>
+        <td class="valor neutral">R$ 0,00</td>
+        <td class="valor negative">R$ 15669,11</td>
+        <td class="valor negative">R$ -15669,11</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Fevereiro</td>
+        <td class="valor neutral">R$ 0,00</td>
+        <td class="valor negative">R$ 13823,05</td>
+        <td class="valor negative">R$ -13823,05</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Março</td>
+        <td class="valor neutral">R$ 0,00</td>
+        <td class="valor negative">R$ 13461,51</td>
+        <td class="valor negative">R$ -13461,51</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Abril</td>
+        <td class="valor neutral">R$ 0,00</td>
+        <td class="valor negative">R$ 14243,33</td>
+        <td class="valor negative">R$ -14243,33</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Maio</td>
+        <td class="valor neutral">R$ 0,00</td>
+        <td class="valor negative">R$ 14956,29</td>
+        <td class="valor negative">R$ -14956,29</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Junho</td>
+        <td class="valor neutral">R$ 0,00</td>
+        <td class="valor negative">R$ 18750,71</td>
+        <td class="valor negative">R$ -18750,71</td>
+      </tr>
+      <tr>
+        <td class="mes-cell">Julho</td>
+        <td class="valor neutral">R$ 0,00</td>
+        <td class="valor negative">R$ 7560,51</td>
+        <td class="valor negative">R$ -7560,51</td>
+      </tr>
+      <tr class="footer">
+        <td style="color:#fff">TOTAL</td>
+        <td class="valor neutral">R$ 218319,71</td>
+        <td class="valor negative">R$ 98464,51</td>
+        <td class="valor positive">R$ 119855,20</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

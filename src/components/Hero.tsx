@@ -20,8 +20,8 @@ export function Hero() {
         <div className="mx-auto mb-6 h-1 w-12 rounded-full bg-ember" />
 
         <h1 className="text-balance max-w-4xl text-4xl font-extrabold leading-tight text-canvas sm:text-5xl md:text-6xl lg:text-7xl">
-          Sua chegada merece ser{" "}
-          <span className="text-ember">especial</span>
+          Transporte Executivo Premium{" "}
+          <span className="text-ember">em Belo Horizonte</span>
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg text-silver sm:text-xl">

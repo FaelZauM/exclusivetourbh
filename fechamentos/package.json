@@ -1,0 +1,21 @@
+{
+  "name": "fechamentos-automacao",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "calc": "node index.js",
+    "contas": "node index-contas.js",
+    "dashboard": "node gerar-dashboard.js",
+    "escrever": "node escrever.js",
+    "escrever-contas": "node escrever-contas.js",
+    "all": "node index.js && node index-contas.js && node gerar-dashboard.js",
+    "agendar": "node agendar.js",
+    "inserir": "node inserir.js",
+    "fechamento": "node gerar-fechamentos.js"
+  },
+  "dependencies": {
+    "@notionhq/client": "^5.22.0",
+    "dotenv": "^16.4.7"
+  }
+}

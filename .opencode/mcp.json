@@ -3,6 +3,9 @@
     "pencil": {
       "command": "npx",
       "args": ["-y", "@pencil/mcp-server"]
+    },
+    "notion": {
+      "url": "https://mcp.notion.com/mcp"
     }
   }
 }

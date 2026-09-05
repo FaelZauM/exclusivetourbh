@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-16T21:47:00.000Z",
+  "title": "Design System: ExclusiveTour BH",
+  "extensions": {
+    "colorMeta": {
+      "ember": {
+        "role": "primary",
+        "displayName": "Ember",
+        "canonical": "oklch(70% 0.15 70)",
+        "purpose": "Exclusive accent for CTAs, active states, star ratings, gold dividers.",
+        "tonalRamp": [
+          "oklch(15% 0.03 70)",
+          "oklch(26% 0.06 70)",
+          "oklch(38% 0.09 70)",
+          "oklch(50% 0.12 70)",
+          "oklch(60% 0.14 70)",
+          "oklch(70% 0.15 70)",
+          "oklch(80% 0.11 70)",
+          "oklch(90% 0.05 70)"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "oklch(0% 0 0)",
+        "purpose": "Body text, primary headings, full-bleed sections.",
+        "tonalRamp": [
+          "oklch(0% 0 0)",
+          "oklch(10% 0 0)",
+          "oklch(20% 0 0)",
+          "oklch(35% 0 0)",
+          "oklch(50% 0 0)",
+          "oklch(65% 0 0)",
+          "oklch(80% 0 0)",
+          "oklch(92% 0 0)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "oklch(100% 0 0)",
+        "purpose": "Page background, card surfaces, text-on-dark.",
+        "tonalRamp": [
+          "oklch(100% 0 0)",
+          "oklch(95% 0 0)",
+          "oklch(88% 0 0)",
+          "oklch(78% 0 0)",
+          "oklch(65% 0 0)",
+          "oklch(50% 0 0)",
+          "oklch(35% 0 0)",
+          "oklch(20% 0 0)"
+        ]
+      },
+      "silver": {
+        "role": "neutral",
+        "displayName": "Silver",
+        "canonical": "oklch(55% 0 0)",
+        "purpose": "Secondary text, metadata, placeholders.",
+        "tonalRamp": [
+          "oklch(20% 0 0)",
+          "oklch(30% 0 0)",
+          "oklch(40% 0 0)",
+          "oklch(55% 0 0)",
+          "oklch(65% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(85% 0 0)",
+          "oklch(93% 0 0)"
+        ]
+      },
+      "slate": {
+        "role": "neutral",
+        "displayName": "Slate",
+        "canonical": "oklch(93% 0 0)",
+        "purpose": "Subtle borders, dividers.",
+        "tonalRamp": [
+          "oklch(40% 0.005 250)",
+          "oklch(50% 0.005 250)",
+          "oklch(60% 0.005 250)",
+          "oklch(70% 0.005 250)",
+          "oklch(80% 0.005 250)",
+          "oklch(88% 0.005 250)",
+          "oklch(93% 0.005 250)",
+          "oklch(97% 0.005 250)"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "oklch(30% 0.015 250)",
+        "purpose": "Dark card borders, footer dividers.",
+        "tonalRamp": [
+          "oklch(15% 0.01 250)",
+          "oklch(22% 0.012 250)",
+          "oklch(30% 0.015 250)",
+          "oklch(40% 0.015 250)",
+          "oklch(50% 0.01 250)",
+          "oklch(60% 0.008 250)",
+          "oklch(70% 0.005 250)",
+          "oklch(85% 0.003 250)"
+        ]
+      },
+      "ember-dark": {
+        "role": "primary",
+        "displayName": "Ember Dark",
+        "canonical": "oklch(55% 0.14 60)",
+        "purpose": "Button hover state.",
+        "tonalRamp": [
+          "oklch(15% 0.03 60)",
+          "oklch(25% 0.06 60)",
+          "oklch(35% 0.09 60)",
+          "oklch(45% 0.12 60)",
+          "oklch(55% 0.14 60)",
+          "oklch(65% 0.13 60)",
+          "oklch(78% 0.10 60)",
+          "oklch(90% 0.05 60)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines only. ExtraBold 800, clamp 2.5rem–5rem." },
+      "headline": { "displayName": "Headline", "purpose": "Section titles. Bold 700, clamp 1.875rem–3rem." },
+      "title": { "displayName": "Title", "purpose": "Card titles, service names. SemiBold 600, 1.125rem." },
+      "body": { "displayName": "Body", "purpose": "Descriptive text. Regular 400, 1rem, 1.6 line-height." },
+      "label": { "displayName": "Label", "purpose": "Nav, buttons, kickers. SemiBold 600, 0.75rem, 0.2em tracking, uppercase." }
+    },
+    "shadows": [
+      { "name": "card-hover", "value": "0 1px 3px rgba(0,0,0,0.1)", "purpose": "Subtle card lift on hover. Not present at rest." },
+      { "name": "ember-glow", "value": "0 0 20px 4px rgba(217, 119, 6, 0.08)", "purpose": "Pulsing glow on hero CTA button." }
+    ],
+    "motion": [
+      { "name": "ease-hover", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "200ms ease-out for state transitions (hover, focus)." },
+      { "name": "ease-reveal", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "600ms ease-out for scroll fade-in-up reveals." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (WhatsApp CTA)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary conversion button. Ember background, white text. Used in Hero, CtaFinal, Header.",
+      "html": "<a href=\"https://wa.me/5531984816915\" class=\"ds-btn-primary\" target=\"_blank\" rel=\"noopener noreferrer\"><svg class=\"ds-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"/></svg><span>Solicitar via WhatsApp</span></a>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #D97706; color: #FFFFFF; padding: 16px 32px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.05em; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: #B45309; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #D97706; } .ds-icon { width: 20px; height: 20px; }"
+    },
+    {
+      "name": "Card (Light)",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Default card on white backgrounds. Outlined, flat at rest, lifts on hover.",
+      "html": "<div class=\"ds-card-light\"><div class=\"ds-card-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" width=\"24\" height=\"24\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"/></svg></div><h3 class=\"ds-card-title\">Transfer Aeroporto</h3><p class=\"ds-card-desc\">Transporte executivo do Aeroporto de Confins ou Pampulha para qualquer destino em BH.</p></div>",
+      "css": ".ds-card-light { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 4px; padding: 24px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-family: Inter, ui-sans-serif, system-ui, sans-serif; } .ds-card-light:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: rgba(217, 119, 6, 0.3); } .ds-card-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 9999px; background: rgba(217, 119, 6, 0.1); margin-bottom: 16px; color: #D97706; } .ds-card-title { font-size: 1.125rem; font-weight: 600; line-height: 1.4; color: #0A0A0A; margin: 0 0 8px 0; } .ds-card-desc { font-size: 0.875rem; font-weight: 400; line-height: 1.6; color: #6B7280; margin: 0; }"
+    },
+    {
+      "name": "Card (Dark)",
+      "kind": "card",
+      "refersTo": "card-dark",
+      "description": "Card on dark backgrounds (Coverage section). Translucent dark fill, night border.",
+      "html": "<div class=\"ds-card-dark\"><div class=\"ds-card-dark-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" width=\"24\" height=\"24\"><path d=\"M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z\"/><path d=\"M2 12h20\"/><path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"/></svg></div><h3 class=\"ds-card-dark-title\">Aeroportos</h3><ul class=\"ds-card-dark-list\"><li>Confins (CNF)</li><li>Pampulha (PLU)</li></ul></div>",
+      "css": ".ds-card-dark { background: rgba(10, 10, 10, 0.5); border: 1px solid #1F2937; border-radius: 4px; padding: 24px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; } .ds-card-dark-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 9999px; background: rgba(217, 119, 6, 0.1); margin-bottom: 16px; color: #D97706; } .ds-card-dark-title { font-size: 1.125rem; font-weight: 600; color: #FFFFFF; margin: 0 0 12px 0; } .ds-card-dark-list { list-style: none; padding: 0; margin: 0; } .ds-card-dark-list li { font-size: 0.875rem; color: #6B7280; padding: 4px 0; padding-left: 16px; position: relative; } .ds-card-dark-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 9999px; background: rgba(217, 119, 6, 0.5); }"
+    },
+    {
+      "name": "Nav Link (Header)",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Desktop navigation link in sticky header. Silver default, ink hover.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#servicos\" class=\"ds-nav-link\">Serviços</a><a href=\"#frota\" class=\"ds-nav-link\">Frota</a><a href=\"#cobertura\" class=\"ds-nav-link\">Cobertura</a><a href=\"#contato\" class=\"ds-nav-link\">Contato</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 32px; } .ds-nav-link { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #6B7280; text-decoration: none; transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-link:hover { color: #0A0A0A; }"
+    },
+    {
+      "name": "Section Heading",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Reusable section heading pattern with optional subtitle and ember line separator.",
+      "html": "<div class=\"ds-section-heading\"><h2 class=\"ds-section-title\">Nossos Serviços</h2><p class=\"ds-section-subtitle\">Soluções completas em transporte executivo para cada momento</p><div class=\"ds-ember-line\"></div></div>",
+      "css": ".ds-section-heading { text-align: center; max-width: 42rem; margin-left: auto; margin-right: auto; } .ds-section-title { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: clamp(1.875rem, 4vw, 3rem); font-weight: 700; line-height: 1.2; color: #0A0A0A; margin: 0; text-wrap: balance; } .ds-section-subtitle { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1.125rem; font-weight: 400; line-height: 1.6; color: rgba(10, 10, 10, 0.6); margin-top: 16px; } .ds-ember-line { width: 40px; height: 4px; background: #D97706; border-radius: 9999px; margin: 32px auto 48px auto; }"
+    },
+    {
+      "name": "Testimonial Card",
+      "kind": "card",
+      "refersTo": null,
+      "description": "Customer testimonial with star rating, quote, name, and role.",
+      "html": "<div class=\"ds-testimonial\"><div class=\"ds-stars\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"#D97706\" stroke=\"#D97706\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/></svg><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"#D97706\" stroke=\"#D97706\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/></svg><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"#D97706\" stroke=\"#D97706\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/></svg><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"#D97706\" stroke=\"#D97706\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/></svg><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"#D97706\" stroke=\"#D97706\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/></svg></div><p class=\"ds-testimonial-quote\">&ldquo;Serviço impecável do início ao fim. Motorista pontual, veículo impecável e atendimento cortês.&rdquo;</p><div class=\"ds-testimonial-footer\"><p class=\"ds-testimonial-name\">Ana Clara Martins</p><p class=\"ds-testimonial-role\">Cliente</p></div></div>",
+      "css": ".ds-testimonial { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 4px; padding: 24px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; } .ds-stars { display: flex; gap: 2px; margin-bottom: 12px; } .ds-testimonial-quote { font-size: 0.875rem; line-height: 1.6; color: #6B7280; margin: 0; } .ds-testimonial-footer { border-top: 1px solid #E5E7EB; margin-top: 16px; padding-top: 16px; } .ds-testimonial-name { font-size: 0.875rem; font-weight: 600; color: #0A0A0A; margin: 0; } .ds-testimonial-role { font-size: 0.75rem; color: #6B7280; margin: 2px 0 0 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Arrival Suite",
+    "overview": "Every section is a room in a suite you enter on arrival — reception, lounge, garage. Quiet, spacious, precisely on time. The design borrows from luxury automotive brand language: restrained geometry, high-contrast monochrome, precise typography, and a single warm accent (ember/gold) used sparingly to signal action. The palette is black or white — never gray, never tinted. Depth is conveyed through tonal contrast and generous whitespace, not shadows or layering. The ember accent covers ≤5% of any screen and is reserved exclusively for action triggers (CTAs, active states, star ratings, decorative gold dividers). This system rejects the generic transportation-site template: no stock imagery, no busy layouts, no loud badges, no corporate robotic feel. Every pixel communicates confidence through restraint.",
+    "keyCharacteristics": [
+      "Monochrome foundation (pure black on pure white) with a single warm accent",
+      "Single-family typography (Inter, weight-driven hierarchy)",
+      "Lightly layered: cards are outlined by default with a subtle hover lift",
+      "Gold ember separator as a recurring rhythmic element between heading and content",
+      "Responsive: same visual weight on mobile as on desktop",
+      "Motion is restrained: state transitions and scroll reveals, no choreography"
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Ember is used on ≤5% of any screen. Its rarity is the point. Never apply ember decoratively — if it doesn't invite an action or mark a rating, it doesn't earn ember.", "section": "colors" },
+      { "name": "The No-Tint Rule", "body": "The canvas is pure white (#FFFFFF) or pure black (#0A0A0A). Gray backgrounds, cream tones, or tinted neutrals are prohibited. Warmth is carried by accent, typography, and service quality, not by the background.", "section": "colors" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Elevation appears only as a response to state (hover, focus). The contrast between pure black text on pure white already provides unambiguous hierarchy; shadows would add noise.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use black-and-white as the primary design statement — let the content breathe. Pure #0A0A0A on pure #FFFFFF.",
+      "Do reserve ember (#D97706) exclusively for CTAs, active states, star ratings, and the signature gold divider lines.",
+      "Do lead with trust signals as design elements: Faixa do Move credential, 90+ fleet, 5★ ratings, 24h service.",
+      "Do keep motion restrained: 200ms ease-out on hover transitions, subtle scroll fade-in-up at 600ms ease-out. No parallax or choreography.",
+      "Do use the Ember Line (h-1 w-10 rounded-full bg-ember) as the consistent rhythmic separator between every heading and content block.",
+      "Do maintain the black/white polarity: canvas is either pure white or pure black (ink-warm). No gray or tinted backgrounds.",
+      "Do use text-wrap: balance on h1-h3 and text-wrap: pretty on long prose.",
+      "Do treat WhatsApp as the single conversion goal — every section leads naturally toward contact."
+    ],
+    "donts": [
+      "Don't use gray backgrounds or tinted neutrals — no cream, sand, beige, or gray body backgrounds.",
+      "Don't use gradient text, glassmorphism, side-stripe borders, or tiny uppercase eyebrow labels above every section.",
+      "Don't create identical card grids with icon + heading + body patterns repeated endlessly.",
+      "Don't add decorative ember elements — the accent is for action.",
+      "Don't gate content behind scroll-triggered visibility; reveals enhance content that is already visible by default.",
+      "Don't use stock transportation imagery — real vehicle photos or typographic placeholders only (gradient dark blocks with vehicle category text).",
+      "Don't build generic/corporate template-feeling layouts. Avoid the look of AI-generated or templated transportation sites.",
+      "Don't pair Inter with another sans-serif — the single-family weight-driven hierarchy is deliberate."
+    ]
+  }
+}

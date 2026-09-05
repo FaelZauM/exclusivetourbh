@@ -1,0 +1,155 @@
+{
+  "generatedAt": "2026-06-27T16:36:29.536Z",
+  "totalGeral": 98464.51,
+  "totalPago": 79522,
+  "totalPendente": 18942.510000000002,
+  "meses": [
+    {
+      "titulo": "Janeiro/ 2026 - R$15.375,9",
+      "total": 15669.11,
+      "pago": 14587.81,
+      "pendente": 1081.3,
+      "secoes": {
+        "cartao": {
+          "total": 14096.78,
+          "itens": 13
+        },
+        "casa": {
+          "total": 1041.03,
+          "itens": 4
+        },
+        "empresa": {
+          "total": 531.3,
+          "itens": 2
+        }
+      }
+    },
+    {
+      "titulo": "Fevereiro/ 2026 - R$13.535,83",
+      "total": 13823.05,
+      "pago": 13291.75,
+      "pendente": 531.3,
+      "secoes": {
+        "cartao": {
+          "total": 12143.42,
+          "itens": 11
+        },
+        "casa": {
+          "total": 1148.33,
+          "itens": 4
+        },
+        "empresa": {
+          "total": 531.3,
+          "itens": 2
+        }
+      }
+    },
+    {
+      "titulo": "Março/ 2026 - R$12.990,11",
+      "total": 13461.51,
+      "pago": 9430.21,
+      "pendente": 4031.3,
+      "secoes": {
+        "cartao": {
+          "total": 11997.72,
+          "itens": 12
+        },
+        "casa": {
+          "total": 932.49,
+          "itens": 4
+        },
+        "empresa": {
+          "total": 531.3,
+          "itens": 2
+        }
+      }
+    },
+    {
+      "titulo": "Abril/ 2026 - R$11.431,35",
+      "total": 14243.33,
+      "pago": 13712.03,
+      "pendente": 531.3,
+      "secoes": {
+        "cartao": {
+          "total": 13067.12,
+          "itens": 13
+        },
+        "casa": {
+          "total": 644.91,
+          "itens": 4
+        },
+        "empresa": {
+          "total": 531.3,
+          "itens": 2
+        }
+      }
+    },
+    {
+      "titulo": "Maio/ 2026 - R$14.424,69",
+      "total": 14956.29,
+      "pago": 14424.99,
+      "pendente": 531.3,
+      "secoes": {
+        "cartao": {
+          "total": 13891.05,
+          "itens": 12
+        },
+        "casa": {
+          "total": 533.94,
+          "itens": 4
+        },
+        "empresa": {
+          "total": 531.3,
+          "itens": 2
+        }
+      }
+    },
+    {
+      "titulo": "Junho/ 2026 - R$18.219,41",
+      "total": 18750.71,
+      "pago": 14075.21,
+      "pendente": 4675.5,
+      "secoes": {
+        "cartao": {
+          "total": 16588.23,
+          "itens": 14
+        },
+        "casa": {
+          "total": 631.18,
+          "itens": 5
+        },
+        "empresa": {
+          "total": 1531.3,
+          "itens": 3
+        }
+      }
+    },
+    {
+      "titulo": "Julho/ 2026 ",
+      "total": 7560.51,
+      "pago": 0,
+      "pendente": 7560.51,
+      "secoes": {
+        "cartao": {
+          "total": 6781.43,
+          "itens": 8
+        },
+        "casa": {
+          "total": 247.78,
+          "itens": 3
+        },
+        "empresa": {
+          "total": 531.3,
+          "itens": 2
+        }
+      }
+    },
+    {
+      "titulo": "Anotações",
+      "total": 0,
+      "pago": 0,
+      "pendente": 0,
+      "secoes": {}
+    }
+  ]
+}
