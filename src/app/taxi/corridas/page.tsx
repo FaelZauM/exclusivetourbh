@@ -104,6 +104,9 @@ export default function RidesPage() {
       return 0
     }
     if (ride.type === "passed" && ride.commission) {
+      if (ride.user_id === user?.id) {
+        return ride.value - ride.commission
+      }
       return ride.commission
     }
     return ride.value
