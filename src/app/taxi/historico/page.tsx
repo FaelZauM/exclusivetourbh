@@ -205,6 +205,22 @@ export default function HistoricoPage() {
     return true
   })
 
+  const filteredFuelExpenses = fuelExpenses.filter((f) => {
+    if (selectedDay !== null) {
+      const fuelDate = new Date(f.fuel_date)
+      if (fuelDate.getDate() !== selectedDay) return false
+    }
+    return true
+  })
+
+  const filteredExpenses = expenses.filter((e) => {
+    if (selectedDay !== null) {
+      const expenseDate = new Date(e.expense_date)
+      if (expenseDate.getDate() !== selectedDay) return false
+    }
+    return true
+  })
+
   const faturamentoBruto = filteredRides.reduce((sum, ride) => {
     if (ride.received_with_client) return sum
     return sum + ride.value
@@ -214,7 +230,7 @@ export default function HistoricoPage() {
     return sum + getEarnings(ride)
   }, 0)
 
-  const totalGasolina = typeFilter !== "passed" ? fuelExpenses.reduce((sum, f) => sum + f.total_value, 0) : 0
+  const totalGasolina = typeFilter !== "passed" ? filteredFuelExpenses.reduce((sum, f) => sum + f.total_value, 0) : 0
   const faturamentoLiquidoPosGasolina = faturamentoLiquido - totalGasolina
 
   const now = new Date()
@@ -431,7 +447,7 @@ export default function HistoricoPage() {
                 </>
               )}
               <p className="text-xs text-taxi-gray-500">
-                {filteredRides.length} corridas{fuelExpenses.length > 0 && typeFilter !== "passed" && ` • ${fuelExpenses.length} abastecimentos`}
+                {filteredRides.length} corridas{filteredFuelExpenses.length > 0 && typeFilter !== "passed" && ` • ${filteredFuelExpenses.length} abastecimentos`}
               </p>
             </div>
           </div>
@@ -530,13 +546,13 @@ export default function HistoricoPage() {
                 {expenseFilter === "gasolina" ? "Abastecimentos" : "Gastos"}
               </h3>
               {expenseFilter === "gasolina" ? (
-                fuelExpenses.length === 0 ? (
+                filteredFuelExpenses.length === 0 ? (
                   <p className="text-center text-taxi-gray-500 py-4">
                     Nenhum abastecimento registrado.
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {fuelExpenses.map((fuel) => (
+                    {filteredFuelExpenses.map((fuel) => (
                       <div
                         key={fuel.id}
                         className="p-3 bg-white border border-taxi-gray-200 rounded-xl flex justify-between items-center"
@@ -556,13 +572,13 @@ export default function HistoricoPage() {
                   </div>
                 )
               ) : (
-                expenses.length === 0 ? (
+                filteredExpenses.length === 0 ? (
                   <p className="text-center text-taxi-gray-500 py-4">
                     Nenhum gasto registrado.
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {expenses.map((expense) => {
+                    {filteredExpenses.map((expense) => {
                       const categoryIcons: Record<string, string> = {
                         fuel: "⛽",
                         wash: "🚗",
