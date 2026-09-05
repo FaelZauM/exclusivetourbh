@@ -4,7 +4,7 @@ import { useState } from "react"
 import { getSupabase } from "../lib/supabase"
 
 interface GoalFormProps {
-  currentGoals: { daily_goal: number; weekly_goal: number } | null
+  currentGoals: { id: string; daily_goal: number; weekly_goal: number } | null
   onSuccess: () => void
 }
 
@@ -29,10 +29,9 @@ export function GoalForm({ currentGoals, onSuccess }: GoalFormProps) {
           weekly_goal: parseFloat(weeklyGoal),
           updated_at: new Date().toISOString(),
         })
-        .eq("id", "1")
+        .eq("id", currentGoals.id)
     } else {
       await getSupabase().from("goals").insert({
-        id: "1",
         daily_goal: parseFloat(dailyGoal),
         weekly_goal: parseFloat(weeklyGoal),
       })
