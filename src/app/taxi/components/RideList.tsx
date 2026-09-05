@@ -16,6 +16,13 @@ export function RideList({ rides, onDelete }: RideListProps) {
     )
   }
 
+  function getEarnings(ride: Ride): number {
+    if (ride.type === "passed" && ride.commission) {
+      return ride.value - ride.commission
+    }
+    return ride.value
+  }
+
   return (
     <div className="space-y-3">
       {rides.map((ride) => (
@@ -49,11 +56,11 @@ export function RideList({ rides, onDelete }: RideListProps) {
             </div>
             <div className="text-right">
               <p className="font-bold text-taxi-success">
-                R$ {ride.value.toFixed(2)}
+                R$ {getEarnings(ride).toFixed(2)}
               </p>
-              {ride.commission && (
+              {ride.type === "passed" && ride.commission && (
                 <p className="text-xs text-taxi-gray-500">
-                  Comissão: R$ {ride.commission.toFixed(2)}
+                  Total: R$ {ride.value.toFixed(2)} | Motorista: R$ {ride.commission.toFixed(2)}
                 </p>
               )}
               <button

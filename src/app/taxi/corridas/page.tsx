@@ -40,7 +40,14 @@ export default function RidesPage() {
     fetchRides()
   }
 
-  const totalValue = rides.reduce((sum, ride) => sum + ride.value, 0)
+  function getEarnings(ride: Ride): number {
+    if (ride.type === "passed" && ride.commission) {
+      return ride.value - ride.commission
+    }
+    return ride.value
+  }
+
+  const totalValue = rides.reduce((sum, ride) => sum + getEarnings(ride), 0)
 
   return (
     <main className="p-4">

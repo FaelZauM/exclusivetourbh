@@ -131,7 +131,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Valor Motorista (R$)</label>
+            <label className="block text-sm font-medium mb-1">Valor do Motorista (R$)</label>
             <input
               type="number"
               step="0.01"
@@ -140,6 +140,9 @@ export function RideForm({ onSuccess }: RideFormProps) {
               className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
               required
             />
+            <p className="text-xs text-taxi-gray-500 mt-1">
+              Sua comissão: R$ {value && commission ? (parseFloat(value) - parseFloat(commission)).toFixed(2) : "0.00"}
+            </p>
           </div>
         </>
       )}
