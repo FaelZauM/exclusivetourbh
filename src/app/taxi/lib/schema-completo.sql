@@ -67,6 +67,16 @@ CREATE TABLE IF NOT EXISTS fuel (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL CHECK (category IN ('fuel', 'wash', 'food', 'maintenance', 'other')),
+  value DECIMAL(10,2) NOT NULL,
+  description TEXT,
+  expense_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS fuel_price (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   price_per_liter DECIMAL(10,2) NOT NULL,

@@ -45,6 +45,16 @@ export interface FuelPrice {
   created_at: string
 }
 
+export interface Expense {
+  id: string
+  user_id: string
+  category: "fuel" | "wash" | "food" | "maintenance" | "other"
+  value: number
+  description?: string
+  expense_date: string
+  created_at: string
+}
+
 export interface Goal {
   id: string
   daily_goal: number

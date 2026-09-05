@@ -6,7 +6,7 @@ import { useAuth } from "../lib/auth-context"
 
 const navItems = [
   { href: "/taxi/corridas", label: "Corridas", icon: "🚗" },
-  { href: "/taxi/investimento", label: "Investimento", icon: "💰" },
+  { href: "/taxi/gastos", label: "Gastos", icon: "💸" },
   { href: "/taxi/historico", label: "Histórico", icon: "📊" },
   { href: "/taxi/config", label: "Config", icon: "⚙️" },
 ]
