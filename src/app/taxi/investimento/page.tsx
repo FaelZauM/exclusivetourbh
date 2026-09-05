@@ -12,8 +12,6 @@ export default function InvestmentPage() {
   const { user } = useAuth()
   const [totalSaved, setTotalSaved] = useState(0)
   const [recentFuel, setRecentFuel] = useState<Fuel[]>([])
-  const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     if (user) {
       fetchData()
@@ -40,7 +38,6 @@ export default function InvestmentPage() {
       .limit(5)
 
     setRecentFuel(fuel || [])
-    setLoading(false)
   }
 
   return (

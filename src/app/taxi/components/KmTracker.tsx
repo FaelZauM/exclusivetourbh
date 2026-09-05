@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
+import type { Fuel } from "../lib/types"
 
 export function KmTracker() {
   const { user } = useAuth()
-  const [todayFuel, setTodayFuel] = useState<any>(null)
+  const [todayFuel, setTodayFuel] = useState<Fuel | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -27,7 +28,7 @@ export function KmTracker() {
       .gte("fuel_date", today.toISOString())
       .order("fuel_date", { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     setTodayFuel(data)
   }
