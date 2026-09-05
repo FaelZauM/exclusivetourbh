@@ -1,5 +1,12 @@
+"use client"
+
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { AuthProvider, useAuth } from "./lib/auth-context"
+import { Header } from "./components/Header"
+import { BottomNav } from "./components/BottomNav"
+import { useRouter, usePathname } from "next/navigation"
+import { useEffect } from "react"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -7,17 +14,36 @@ const inter = Inter({
   variable: "--font-inter",
 })
 
-export const metadata: Metadata = {
-  title: "Taxi Control | Controle de corridas",
-  description:
-    "Registre corridas, controle investimentos e acompanhe suas metas.",
-  metadataBase: new URL("https://exclusivetourbh.com.br"),
-  openGraph: {
-    title: "Taxi Control — Controle de corridas",
-    description: "Registre corridas, controle investimentos e acompanhe suas metas.",
-    locale: "pt_BR",
-    type: "website",
-  },
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    if (!loading && !user && pathname !== "/taxi/auth") {
+      router.push("/taxi/auth")
+    }
+  }, [user, loading, pathname, router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-taxi-gray-500">Carregando...</p>
+      </div>
+    )
+  }
+
+  if (!user && pathname !== "/taxi/auth") {
+    return null
+  }
+
+  return (
+    <div className="min-h-screen pb-16">
+      {pathname !== "/taxi/auth" && <Header />}
+      {children}
+      {pathname !== "/taxi/auth" && <BottomNav />}
+    </div>
+  )
 }
 
 export default function TaxiLayout({
@@ -26,7 +52,9 @@ export default function TaxiLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable}`}>
       <body className="font-inter bg-white text-taxi-gray-900 antialiased">
-        {children}
+        <AuthProvider>
+          <AuthGuard>{children}</AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   )
