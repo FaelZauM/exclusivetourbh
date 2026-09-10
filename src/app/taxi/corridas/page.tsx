@@ -7,6 +7,8 @@ import { RideForm } from "../components/RideForm"
 import { RideList } from "../components/RideList"
 import { ProgressBar } from "../components/ProgressBar"
 import { KmTracker } from "../components/KmTracker"
+import { ScheduledRideForm } from "../components/ScheduledRideForm"
+import { ScheduledRidesList } from "../components/ScheduledRidesList"
 import type { Ride, User, Goal, DriverGoal } from "../lib/types"
 
 export default function RidesPage() {
@@ -15,6 +17,7 @@ export default function RidesPage() {
   const [drivers, setDrivers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [dailyGoal, setDailyGoal] = useState(200)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     if (user) {
@@ -179,6 +182,14 @@ export default function RidesPage() {
 
       <div className="mb-6">
         <KmTracker />
+      </div>
+
+      <ScheduledRidesList refreshKey={refreshKey} />
+
+      <div className="mb-6">
+        <ScheduledRideForm 
+          onSuccess={() => setRefreshKey(k => k + 1)} 
+        />
       </div>
 
       <RideForm onSuccess={fetchRides} />
