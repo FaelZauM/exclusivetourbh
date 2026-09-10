@@ -2,29 +2,32 @@ export interface User {
   id: string
   email: string
   nome: string
-  role: "admin" | "driver"
+  role: "admin" | "driver" | "user" | "developer"
+  status?: "pending" | "approved" | "rejected"
   created_at: string
 }
 
 export interface Ride {
   id: string
   user_id: string
-  type: "own" | "passed"
-  category: "app" | "taximeter" | "cooperative" | "private" | "invoiced"
-  car_type?: "executivo" | "taxi"
+  type: RideType
+  category: RideCategory
+  car_type?: "executivo" | "taxi" | null
   value: number
   commission?: number
   driver_name?: string
   passenger_name?: string
-  dispatcher_name?: string
   company_name?: string
+  dispatcher_name?: string
   start_location?: string
   end_location?: string
   ride_date: string
   created_at: string
-  added_by_admin?: boolean
   received_with_client?: boolean
   paid_to_driver?: boolean
+  added_by_admin?: boolean
+  source?: "app" | "notion"
+  notion_id?: string
 }
 
 export interface Fuel {
@@ -33,9 +36,12 @@ export interface Fuel {
   fuel_date: string
   liters?: number
   total_value: number
+  price_per_liter?: number
   km_start?: number
   km_end?: number
   created_at: string
+  source?: "app" | "notion"
+  notion_id?: string
 }
 
 export interface FuelPrice {
@@ -101,3 +107,42 @@ export interface DriverInvitation {
 
 export type RideCategory = "app" | "taximeter" | "cooperative" | "private" | "invoiced"
 export type RideType = "own" | "passed"
+
+export interface RentalRate {
+  id: string
+  user_id: string
+  daily_rate: number
+  month: number
+  year: number
+  created_at: string
+}
+
+export interface ScheduledRide {
+  id: string
+  user_id: string
+  type: "own" | "passed"
+  category: "cooperative" | "private" | "invoiced"
+  value: number
+  commission: number | null
+  driver_name: string | null
+  passenger_name: string | null
+  company_name: string | null
+  dispatcher_name: string | null
+  start_location: string | null
+  end_location: string | null
+  scheduled_date: string
+  status: "scheduled" | "notified" | "completed" | "cancelled"
+  notified_at: string | null
+  created_at: string
+  user_email?: string
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  title: string
+  message: string
+  type: string
+  read: boolean
+  created_at: string
+}
