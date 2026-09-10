@@ -6,8 +6,8 @@ import type { ScheduledRide, Notification } from "./types"
 export async function checkAndSendNotifications(): Promise<number> {
   const now = new Date()
   const ownThreshold = new Date(now.getTime() + 60 * 60 * 1000) // 1 hour
-  const passedThreshold = new Date(now.getTime() + 15 * 60 * 1000) // 15 minutes
 
+  // Buscar agendamentos que precisam de notificação
   const { data: scheduledRides } = await getSupabase()
     .from("scheduled_rides")
     .select("*")
@@ -52,6 +52,41 @@ export async function checkAndSendNotifications(): Promise<number> {
         .eq("id", ride.id)
 
       notifiedCount++
+    }
+  }
+
+  // Buscar agendamentos que já passaram do horário → criar corrida automaticamente
+  const { data: pastRides } = await getSupabase()
+    .from("scheduled_rides")
+    .select("*")
+    .in("status", ["scheduled", "notified"])
+    .lte("scheduled_date", now.toISOString())
+
+  if (pastRides && pastRides.length > 0) {
+    for (const ride of pastRides) {
+      // Criar corrida na tabela rides
+      const { error } = await getSupabase().from("rides").insert({
+        user_id: ride.user_id,
+        type: ride.type,
+        category: ride.category,
+        value: ride.value,
+        commission: ride.commission,
+        driver_name: ride.driver_name,
+        passenger_name: ride.passenger_name,
+        company_name: ride.company_name,
+        start_location: ride.start_location,
+        end_location: ride.end_location,
+        ride_date: ride.scheduled_date,
+        paid_to_driver: false,
+      })
+
+      if (!error) {
+        // Atualizar status do agendamento para completed
+        await getSupabase()
+          .from("scheduled_rides")
+          .update({ status: "completed" })
+          .eq("id", ride.id)
+      }
     }
   }
 
