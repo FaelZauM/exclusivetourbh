@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import type { Ride, User, Fuel, RideCategory, Expense } from "../lib/types"
+import { ExportModal } from "../components/ExportModal"
+import type { Ride, User, Fuel, RideCategory, Expense, RentalRate } from "../lib/types"
 
 function getCategoryLabel(category: RideCategory): string {
   const labels: Record<RideCategory, string> = {
@@ -23,20 +24,29 @@ export default function HistoricoPage() {
   const [drivers, setDrivers] = useState<User[]>([])
   const [fuelExpenses, setFuelExpenses] = useState<Fuel[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [rentalRates, setRentalRates] = useState<RentalRate[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [typeFilter, setTypeFilter] = useState<"all" | "own" | "passed">("all")
   const [carTypeFilter, setCarTypeFilter] = useState<"all" | "executivo" | "taxi">("all")
-  const [expenseFilter, setExpenseFilter] = useState<"all" | "gastos" | "gasolina">("all")
+  const [expenseFilter, setExpenseFilter] = useState<"all" | "gastos" | "gasolina" | "diarias">("all")
+  const [companyFilter, setCompanyFilter] = useState("all")
   const [weeklyGoal, setWeeklyGoal] = useState(1000)
   const [monthlyGoal, setMonthlyGoal] = useState(4000)
+
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [allRides, setAllRides] = useState<Ride[]>([])
+  const [allExpenses, setAllExpenses] = useState<Expense[]>([])
+  const [allFuels, setAllFuels] = useState<Fuel[]>([])
+  const [allUsers, setAllUsers] = useState<User[]>([])
 
   const [editingRide, setEditingRide] = useState<Ride | null>(null)
   const [editValue, setEditValue] = useState("")
   const [editCommission, setEditCommission] = useState("")
   const [editPassengerName, setEditPassengerName] = useState("")
+  const [editDriverName, setEditDriverName] = useState("")
   const [editCompanyName, setEditCompanyName] = useState("")
   const [editCarType, setEditCarType] = useState<"executivo" | "taxi">("executivo")
   const [editStartLocation, setEditStartLocation] = useState("")
@@ -50,6 +60,8 @@ export default function HistoricoPage() {
       fetchRides()
       fetchGoals()
       fetchExpenses()
+      fetchRentalRates()
+      fetchAllData()
     }
   }, [user, selectedMonth, selectedYear])
 
@@ -96,6 +108,47 @@ export default function HistoricoPage() {
       .order("expense_date", { ascending: false })
 
     setExpenses(data || [])
+  }
+
+  async function fetchRentalRates() {
+    if (!user) return
+
+    const { data } = await getSupabase()
+      .from("rental_rates")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("month", selectedMonth)
+      .eq("year", selectedYear)
+
+    setRentalRates(data || [])
+  }
+
+  async function fetchAllData() {
+    if (!user) return
+
+    const { data: ridesData } = await getSupabase()
+      .from("rides")
+      .select("*")
+      .eq("user_id", user.id)
+
+    const { data: expensesData } = await getSupabase()
+      .from("expenses")
+      .select("*")
+      .eq("user_id", user.id)
+
+    const { data: fuelsData } = await getSupabase()
+      .from("fuel")
+      .select("*")
+      .eq("user_id", user.id)
+
+    const { data: usersData } = await getSupabase()
+      .from("users")
+      .select("*")
+
+    setAllRides(ridesData || [])
+    setAllExpenses(expensesData || [])
+    setAllFuels(fuelsData || [])
+    setAllUsers(usersData || [])
   }
 
   async function fetchRides() {
@@ -154,7 +207,7 @@ export default function HistoricoPage() {
     const { data: driversData } = await getSupabase()
       .from("users")
       .select("*")
-      .eq("role", "driver")
+      .neq("role", "admin")
 
     setDrivers(driversData || [])
     setLoading(false)
@@ -176,6 +229,7 @@ export default function HistoricoPage() {
     setEditValue(ride.value.toString())
     setEditCommission(ride.commission?.toString() || "")
     setEditPassengerName(ride.passenger_name || "")
+    setEditDriverName(ride.driver_name || "")
     setEditCompanyName(ride.company_name || "")
     setEditCarType(ride.car_type || "executivo")
     setEditStartLocation(ride.start_location || "")
@@ -204,6 +258,7 @@ export default function HistoricoPage() {
         commission: editCommission ? parseFloat(editCommission) : null,
         car_type: editCarType,
         passenger_name: editPassengerName || null,
+        driver_name: editDriverName || null,
         company_name: editCompanyName || null,
         start_location: editStartLocation || null,
         end_location: editEndLocation || null,
@@ -225,11 +280,13 @@ export default function HistoricoPage() {
   }
 
   function getEarnings(ride: Ride): number {
-    if (ride.received_with_client) return 0
     if (ride.type === "passed" && ride.commission) {
-      if (ride.user_id === user?.id) {
+      if (ride.added_by_admin) {
+        if (ride.received_with_client) return ride.value
+        if (ride.user_id === user?.id) return ride.commission
         return ride.value - ride.commission
       }
+      if (ride.user_id === user?.id) return ride.value - ride.commission
       return ride.commission
     }
     return ride.value
@@ -237,6 +294,9 @@ export default function HistoricoPage() {
 
   function getRepassedValue(ride: Ride): number {
     if (ride.type === "passed" && ride.commission) {
+      if (ride.added_by_admin && ride.user_id !== user?.id) {
+        return 0
+      }
       if (ride.user_id === user?.id) {
         return ride.commission
       }
@@ -244,9 +304,10 @@ export default function HistoricoPage() {
     return 0
   }
 
-  function getDriverName(userId: string): string {
-    if (user?.id === userId) return "Você"
-    const driver = drivers.find((d) => d.id === userId)
+  function getDriverName(ride: Ride): string {
+    if (ride.driver_name) return ride.driver_name
+    if (user?.id === ride.user_id) return "Você"
+    const driver = drivers.find((d) => d.id === ride.user_id)
     return driver?.nome || "Desconhecido"
   }
 
@@ -254,6 +315,7 @@ export default function HistoricoPage() {
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 
   const filteredRides = rides.filter((r) => {
+    if (r.added_by_admin && r.user_id === user?.id && !r.received_with_client) return false
     if (typeFilter === "own") {
       if (r.user_id !== user?.id) return false
     }
@@ -267,10 +329,15 @@ export default function HistoricoPage() {
     if (typeFilter === "passed" && carTypeFilter !== "all") {
       if (r.car_type !== carTypeFilter) return false
     }
+    if (companyFilter !== "all") {
+      if (r.category !== "invoiced" || r.company_name !== companyFilter) return false
+    }
     return true
   })
 
   const filteredFuelExpenses = fuelExpenses.filter((f) => {
+    if (expenseFilter === "gastos") return false
+    if (expenseFilter === "diarias") return false
     if (selectedDay !== null) {
       const fuelDate = new Date(f.fuel_date)
       if (fuelDate.getDate() !== selectedDay) return false
@@ -279,10 +346,18 @@ export default function HistoricoPage() {
   })
 
   const filteredExpenses = expenses.filter((e) => {
+    if (expenseFilter === "gasolina" && e.category !== "fuel") return false
+    if (expenseFilter === "gastos" && e.category === "fuel") return false
+    if (expenseFilter === "diarias") return false
     if (selectedDay !== null) {
       const expenseDate = new Date(e.expense_date)
       if (expenseDate.getDate() !== selectedDay) return false
     }
+    return true
+  })
+
+  const filteredRentalRates = rentalRates.filter((r) => {
+    if (expenseFilter === "gasolina" || expenseFilter === "gastos") return false
     return true
   })
 
@@ -306,10 +381,23 @@ export default function HistoricoPage() {
   const startOfWeek = new Date(now)
   startOfWeek.setDate(now.getDate() - now.getDay())
   startOfWeek.setHours(0, 0, 0, 0)
+  const endOfWeek = new Date(startOfWeek)
+  endOfWeek.setDate(startOfWeek.getDate() + 6)
+  endOfWeek.setHours(23, 59, 59, 999)
 
   const weeklyEarnings = rides
-    .filter((r) => new Date(r.ride_date) >= startOfWeek)
+    .filter((r) => {
+      const d = new Date(r.ride_date)
+      return d >= startOfWeek && d <= endOfWeek
+    })
     .reduce((sum, ride) => sum + getEarnings(ride), 0)
+
+  const formatWeekRange = () => {
+    const opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit" }
+    const start = startOfWeek.toLocaleDateString("pt-BR", opts)
+    const end = endOfWeek.toLocaleDateString("pt-BR", opts)
+    return `${start} - ${end}`
+  }
 
   const monthNames = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -320,7 +408,15 @@ export default function HistoricoPage() {
 
   return (
     <main className="p-4">
-      <h2 className="text-xl font-bold mb-6">Histórico</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold">Histórico</h2>
+        <button
+          onClick={() => setShowExportModal(true)}
+          className="px-4 py-2 bg-taxi-primary text-white text-sm font-medium rounded-xl"
+        >
+          📄 Exportar
+        </button>
+      </div>
 
       <div className="flex gap-2 mb-4">
         <select
@@ -422,19 +518,50 @@ export default function HistoricoPage() {
         </div>
       )}
 
+      {(() => {
+        const companies = [...new Set(rides.filter(r => r.category === "invoiced" && r.company_name).map(r => r.company_name))]
+        if (companies.length === 0) return null
+        return (
+          <div className="flex gap-2 mb-6 flex-wrap">
+            <button
+              onClick={() => setCompanyFilter("all")}
+              className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                companyFilter === "all"
+                  ? "bg-taxi-primary text-white"
+                  : "bg-taxi-gray-100 text-taxi-gray-600"
+              }`}
+            >
+              Todas empresas
+            </button>
+            {companies.map((company) => (
+              <button
+                key={company}
+                onClick={() => setCompanyFilter(company!)}
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  companyFilter === company
+                    ? "bg-taxi-primary text-white"
+                    : "bg-taxi-gray-100 text-taxi-gray-600"
+                }`}
+              >
+                {company}
+              </button>
+            ))}
+          </div>
+        )
+      })()}
+
       <div className="flex gap-2 mb-6">
         {([
-          ["all", "Todos"],
-          ["gasolina", "Gasolina"],
-          ["gastos", "Gastos"],
-        ] as const).map(([value, label]) => (
+          ["all", "Todos", "bg-taxi-gray-100 text-taxi-gray-600", "bg-taxi-gray-200 text-taxi-gray-800"],
+          ["gasolina", "Gasolina", "bg-emerald-100 text-emerald-700", "bg-emerald-500 text-white"],
+          ["gastos", "Gastos", "bg-red-100 text-red-700", "bg-red-500 text-white"],
+          ["diarias", "Diárias", "bg-orange-100 text-orange-700", "bg-orange-500 text-white"],
+        ] as const).map(([value, label, base, active]) => (
           <button
             key={value}
             onClick={() => setExpenseFilter(value)}
             className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-              expenseFilter === value
-                ? "bg-taxi-orange text-white"
-                : "bg-taxi-gray-100 text-taxi-gray-600"
+              expenseFilter === value ? active : base
             }`}
           >
             {label}
@@ -447,6 +574,9 @@ export default function HistoricoPage() {
       ) : (
         <>
           <div className="mb-4">
+            <p className="text-xs text-taxi-gray-500 text-center mb-1">
+              📅 {formatWeekRange()}
+            </p>
             <ProgressBar
               current={weeklyEarnings}
               goal={weeklyGoal}
@@ -476,6 +606,16 @@ export default function HistoricoPage() {
                     <div className="border-t border-taxi-gray-200 pt-3">
                       <p className="text-sm text-taxi-gray-500">
                         {carTypeFilter === "executivo" ? "Executivo" : "Táxi"}
+                      </p>
+                      <p className="text-xl font-bold text-taxi-gray-700">
+                        R$ {filteredRides.reduce((sum, ride) => sum + getEarnings(ride), 0).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                  {companyFilter !== "all" && (
+                    <div className="border-t border-taxi-gray-200 pt-3">
+                      <p className="text-sm text-taxi-gray-500">
+                        Faturado - {companyFilter}
                       </p>
                       <p className="text-xl font-bold text-taxi-gray-700">
                         R$ {filteredRides.reduce((sum, ride) => sum + getEarnings(ride), 0).toFixed(2)}
@@ -618,6 +758,16 @@ export default function HistoricoPage() {
                             className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
                           />
                         </div>
+                        <div>
+                          <label className="text-xs text-taxi-gray-500">Motorista</label>
+                          <input
+                            type="text"
+                            value={editDriverName}
+                            onChange={(e) => setEditDriverName(e.target.value)}
+                            className="w-full px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+                            placeholder="Nome do motorista"
+                          />
+                        </div>
                         {ride.category === "invoiced" && (
                           <div>
                             <label className="text-xs text-taxi-gray-500">Empresa</label>
@@ -671,7 +821,9 @@ export default function HistoricoPage() {
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold">{getCategoryLabel(ride.category)}</span>
+                            <span className="font-semibold">
+                              {ride.category === "invoiced" ? `Faturado${ride.company_name ? ` - ${ride.company_name}` : ""}` : getCategoryLabel(ride.category)}
+                            </span>
                             <span className="text-xs text-taxi-gray-500">
                               {ride.type === "own" ? "Particular" : "Passada"}
                             </span>
@@ -684,9 +836,14 @@ export default function HistoricoPage() {
                                 {ride.car_type === "executivo" ? "Executivo" : "Táxi"}
                               </span>
                             )}
-                            {ride.user_id !== user?.id && (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                                👤 {getDriverName(ride.user_id)}
+                            {ride.source === "notion" && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                                📱 Notion
+                              </span>
+                            )}
+                            {ride.type === "passed" && ride.user_id === "9012b3cf-8899-4771-8785-5e9543becb14" && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                                👤 Guilherme
                               </span>
                             )}
                           </div>
@@ -718,14 +875,14 @@ export default function HistoricoPage() {
                                     : "bg-white text-taxi-gray-600 border-taxi-gray-300"
                                 }`}
                               >
-                                {ride.paid_to_driver ? "Pago ao motorista" : "Marcar como pago"}
+                                {ride.paid_to_driver ? "Pago ao motorista" : "Marcar como pago"} - {getDriverName(ride)}
                               </button>
                             </div>
                           )}
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
-                          {ride.commission && !ride.received_with_client && (
+                          {ride.commission && !ride.received_with_client && !(ride.added_by_admin && ride.user_id !== user?.id) && (
                             <p className="text-xs text-taxi-gray-500">
                               Total: R$ {ride.value.toFixed(2)}
                             </p>
@@ -764,10 +921,33 @@ export default function HistoricoPage() {
 
           <div className="mt-6">
               <h3 className="font-semibold mb-3">
-                {expenseFilter === "gasolina" ? "Abastecimentos" : expenseFilter === "gastos" ? "Gastos" : "Abastecimentos e Gastos"}
+                {expenseFilter === "gasolina" ? "Abastecimentos" : expenseFilter === "gastos" ? "Gastos" : expenseFilter === "diarias" ? "Diárias" : "Abastecimentos e Gastos"}
               </h3>
-              {expenseFilter === "gasolina" || expenseFilter === "all" ? (
-                filteredFuelExpenses.length > 0 && (
+              {filteredRentalRates.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    {filteredRentalRates.map((rate) => {
+                      const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate()
+                      const total = rate.daily_rate * daysInMonth
+                      return (
+                        <div
+                          key={rate.id}
+                          className="p-3 bg-white border border-taxi-gray-200 rounded-xl flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="font-medium">🚕 Diária de Aluguel</p>
+                            <p className="text-sm text-taxi-gray-500">
+                              R$ {rate.daily_rate.toFixed(2)}/dia × {daysInMonth} dias
+                            </p>
+                          </div>
+                          <p className="font-bold text-orange-600">
+                            R$ {total.toFixed(2)}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              {filteredFuelExpenses.length > 0 && (
                   <div className="space-y-2 mb-4">
                     {filteredFuelExpenses.map((fuel) => (
                       <div
@@ -787,15 +967,13 @@ export default function HistoricoPage() {
                       </div>
                     ))}
                   </div>
-                )
-              ) : null}
-              {expenseFilter === "gastos" || expenseFilter === "all" ? (
-                filteredExpenses.length > 0 ? (
+                )}
+              {filteredExpenses.length > 0 && (
                   <div className="space-y-2">
                     {filteredExpenses.map((expense) => {
                       const categoryIcons: Record<string, string> = {
                         fuel: "⛽",
-                        wash: "🚗",
+                        wash: "🚕",
                         food: "🍔",
                         maintenance: "🔧",
                         other: "📦",
@@ -837,14 +1015,12 @@ export default function HistoricoPage() {
                       )
                     })}
                   </div>
-                ) : (
-                  (expenseFilter === "all" && filteredFuelExpenses.length === 0) && (
-                    <p className="text-center text-taxi-gray-500 py-4">
-                      Nenhum gasto registrado.
-                    </p>
-                  )
-                )
-              ) : null}
+                )}
+              {filteredFuelExpenses.length === 0 && filteredExpenses.length === 0 && filteredRentalRates.length === 0 && (
+                <p className="text-center text-taxi-gray-500 py-4">
+                  Nenhum gasto registrado.
+                </p>
+              )}
               {expenseFilter === "gasolina" && filteredFuelExpenses.length === 0 && (
                 <p className="text-center text-taxi-gray-500 py-4">
                   Nenhum abastecimento registrado.
@@ -855,9 +1031,25 @@ export default function HistoricoPage() {
                   Nenhum gasto registrado.
                 </p>
               )}
+              {expenseFilter === "diarias" && filteredRentalRates.length === 0 && (
+                <p className="text-center text-taxi-gray-500 py-4">
+                  Nenhuma diária configurada.
+                </p>
+              )}
             </div>
         </>
       )}
+
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        rides={allRides}
+        expenses={allExpenses}
+        fuels={allFuels}
+        users={allUsers}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+      />
     </main>
   )
 }
