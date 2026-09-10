@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
+import { ScheduledRideForm } from "../components/ScheduledRideForm"
+import { ScheduledRidesList } from "../components/ScheduledRidesList"
 import type { User, DriverCar, RentalGoal, Ride } from "../lib/types"
 
 export default function AluguelPage() {
@@ -29,6 +31,7 @@ export default function AluguelPage() {
   const [goalValue, setGoalValue] = useState("")
 
   // Ride form states
+  const [refreshKey, setRefreshKey] = useState(0)
   const [showAddRide, setShowAddRide] = useState(false)
   const [rideCategory, setRideCategory] = useState<"private" | "invoiced">("private")
   const [rideValue, setRideValue] = useState("")
@@ -67,11 +70,18 @@ export default function AluguelPage() {
   async function fetchData() {
     if (!user) return
 
-    const { data: carsData } = await getSupabase()
+    let carsQuery = getSupabase()
       .from("driver_cars")
       .select("*")
-      .eq("owner_id", user.id)
       .eq("active", true)
+
+    if (user.role === "admin") {
+      // Admin sees all cars
+    } else {
+      carsQuery = carsQuery.eq("driver_id", user.id)
+    }
+
+    const { data: carsData } = await carsQuery
 
     setMyCars(carsData || [])
 
@@ -124,6 +134,7 @@ export default function AluguelPage() {
       .from("rides")
       .select("*")
       .eq("user_id", car.driver_id)
+      .eq("added_by_admin", true)
       .order("ride_date", { ascending: false })
 
     const sortedRides = (ridesData || []).sort((a, b) => {
@@ -322,21 +333,16 @@ export default function AluguelPage() {
     fetchCarData()
   }
 
-  if (user?.role !== "admin") {
-    return (
-      <main className="p-4">
-        <p className="text-center text-taxi-gray-500">Acesso restrito a administradores.</p>
-      </main>
-    )
-  }
-
   const selectedCarData = myCars.find((c) => c.id === selectedCar)
   
   function getEarnings(ride: any): number {
-    if (ride.received_with_client) {
-      return 0
-    }
     if (ride.type === "passed" && ride.commission) {
+      if (ride.added_by_admin) {
+        if (ride.received_with_client) return ride.value
+        if (ride.user_id === user?.id) return ride.commission
+        return ride.value - ride.commission
+      }
+      if (ride.user_id === user?.id) return ride.value - ride.commission
       return ride.commission
     }
     return ride.value
@@ -606,15 +612,30 @@ export default function AluguelPage() {
                 </form>
               </div>
 
+              {user?.role === "admin" && (
+                <>
+                  <ScheduledRidesList refreshKey={refreshKey} />
+
+                  <div className="mb-6">
+                    <ScheduledRideForm
+                      type="passed"
+                      onSuccess={() => setRefreshKey(k => k + 1)}
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="font-semibold">Corridas do Período</h3>
-                  <button
-                    onClick={() => setShowAddRide(!showAddRide)}
-                    className="text-sm text-taxi-primary font-medium"
-                  >
-                    {showAddRide ? "Cancelar" : "+ Nova Corrida"}
-                  </button>
+                  {user?.role === "admin" && (
+                    <button
+                      onClick={() => setShowAddRide(!showAddRide)}
+                      className="text-sm text-taxi-primary font-medium"
+                    >
+                      {showAddRide ? "Cancelar" : "+ Nova Corrida"}
+                    </button>
+                  )}
                 </div>
 
                 {showAddRide && (
@@ -718,15 +739,6 @@ export default function AluguelPage() {
                       </p>
                     )}
                     <div>
-                      <label className="block text-sm font-medium mb-1">Motorista (opcional)</label>
-                      <input
-                        type="text"
-                        value={rideDriverName}
-                        onChange={(e) => setRideDriverName(e.target.value)}
-                        className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
-                      />
-                    </div>
-                    <div>
                       <label className="block text-sm font-medium mb-1">Passageiro (opcional)</label>
                       <input
                         type="text"
@@ -767,7 +779,9 @@ export default function AluguelPage() {
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <p className="font-medium">{ride.category}</p>
+                            <p className="font-medium">
+                              {ride.category === "invoiced" ? `Faturado${ride.company_name ? ` - ${ride.company_name}` : ""}` : ride.category === "private" ? "Particular" : ride.category}
+                            </p>
                             {ride.passenger_name && (
                               <p className="text-sm text-taxi-gray-500">
                                 Passageiro: {ride.passenger_name}
@@ -784,11 +798,12 @@ export default function AluguelPage() {
                           </div>
                           <div className="text-right">
                             <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
-                            {ride.commission && !ride.received_with_client && (
+                            {ride.commission && !ride.received_with_client && !ride.added_by_admin && (
                               <p className="text-xs text-taxi-gray-500">
                                 Total: R$ {ride.value.toFixed(2)}
                               </p>
                             )}
+                            {user?.role === "admin" && (
                             <div className="flex gap-2 mt-2 justify-end">
                               <button
                                 onClick={() => startEditingRide(ride)}
@@ -803,6 +818,7 @@ export default function AluguelPage() {
                                 Excluir
                               </button>
                             </div>
+                            )}
                           </div>
                         </div>
                       </div>
