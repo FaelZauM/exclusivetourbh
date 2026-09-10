@@ -5,9 +5,8 @@ import Link from "next/link"
 import { useAuth } from "../lib/auth-context"
 import { useTheme } from "../lib/theme-context"
 import { getSupabase } from "../lib/supabase"
-import { importAllNotionData } from "../lib/notion-service"
-
-const NOTION_PAGE_ID = "2c3a6544942080c4b94fd6fc11ed9e15"
+import { ExportModal } from "../components/ExportModal"
+import type { Ride, Expense, Fuel, User } from "../lib/types"
 
 export default function SettingsPage() {
   const { user, signOut, refreshUser } = useAuth()
@@ -21,8 +20,12 @@ export default function SettingsPage() {
   const [goalsLoading, setGoalsLoading] = useState(false)
   const [goalsSuccess, setGoalsSuccess] = useState(false)
 
-  const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState<string | null>(null)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [allRides, setAllRides] = useState<Ride[]>([])
+  const [allExpenses, setAllExpenses] = useState<Expense[]>([])
+  const [allFuels, setAllFuels] = useState<Fuel[]>([])
+  const [allUsers, setAllUsers] = useState<User[]>([])
+  const [loadingExport, setLoadingExport] = useState(false)
 
   useEffect(() => {
     if (user) setNome(user.nome || "")
@@ -98,25 +101,35 @@ export default function SettingsPage() {
     setGoalsSuccess(true)
   }
 
-  async function handleImportNotion() {
+  async function fetchAllData() {
     if (!user) return
-    
-    setImporting(true)
-    setImportResult(null)
-    
-    try {
-      const result = await importAllNotionData(NOTION_PAGE_ID, user.id)
-      setImportResult(
-        `✅ Importação concluída!\n` +
-        `📊 ${result.ridesImported} corridas importadas\n` +
-        `⛽ ${result.expensesImported} abastecimentos importados`
-      )
-    } catch (error) {
-      setImportResult("❌ Erro ao importar dados do Notion")
-      console.error("Import error:", error)
-    }
-    
-    setImporting(false)
+    setLoadingExport(true)
+
+    const { data: ridesData } = await getSupabase()
+      .from("rides")
+      .select("*")
+      .eq("user_id", user.id)
+
+    const { data: expensesData } = await getSupabase()
+      .from("expenses")
+      .select("*")
+      .eq("user_id", user.id)
+
+    const { data: fuelsData } = await getSupabase()
+      .from("fuel")
+      .select("*")
+      .eq("user_id", user.id)
+
+    const { data: usersData } = await getSupabase()
+      .from("users")
+      .select("*")
+
+    setAllRides(ridesData || [])
+    setAllExpenses(expensesData || [])
+    setAllFuels(fuelsData || [])
+    setAllUsers(usersData || [])
+    setLoadingExport(false)
+    setShowExportModal(true)
   }
 
   return (
@@ -225,26 +238,19 @@ export default function SettingsPage() {
       )}
 
       <div className="mt-8">
-        {user?.role === "admin" && (
-          <div className="mb-4">
-            <h3 className="font-semibold mb-4">Importar do Notion</h3>
-            <p className="text-sm text-taxi-gray-500 mb-3">
-              Importe seu histórico de corridas do Notion para o app.
-            </p>
-            <button
-              onClick={handleImportNotion}
-              disabled={importing}
-              className="w-full py-3 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 disabled:opacity-50"
-            >
-              {importing ? "Importando..." : "📥 Importar do Notion"}
-            </button>
-            {importResult && (
-              <pre className="mt-3 p-3 bg-taxi-gray-50 rounded-xl text-sm whitespace-pre-wrap">
-                {importResult}
-              </pre>
-            )}
-          </div>
-        )}
+        <div className="mb-4">
+          <h3 className="font-semibold mb-4">Exportar Relatórios</h3>
+          <p className="text-sm text-taxi-gray-500 mb-3">
+            Exporte seus relatórios de corridas e gastos em PDF ou CSV.
+          </p>
+          <button
+            onClick={fetchAllData}
+            disabled={loadingExport}
+            className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50"
+          >
+            {loadingExport ? "Carregando..." : "📄 Exportar Relatório"}
+          </button>
+        </div>
 
         <Link
           href="/taxi/convites"
@@ -259,6 +265,17 @@ export default function SettingsPage() {
           Sair
         </button>
       </div>
+
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        rides={allRides}
+        expenses={allExpenses}
+        fuels={allFuels}
+        users={allUsers}
+        selectedMonth={new Date().getMonth() + 1}
+        selectedYear={new Date().getFullYear()}
+      />
     </main>
   )
 }

@@ -1,0 +1,9 @@
+AddDefaultCharset utf-8
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # If requesting root, go to /exclusivepro/
+  RewriteRule ^$ /exclusivepro/ [L,R=301]
+</IfModule>

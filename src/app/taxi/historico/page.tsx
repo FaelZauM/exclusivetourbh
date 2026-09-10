@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import { ExportModal } from "../components/ExportModal"
 import type { Ride, User, Fuel, RideCategory, Expense, RentalRate } from "../lib/types"
 
 function getCategoryLabel(category: RideCategory): string {
@@ -36,12 +35,6 @@ export default function HistoricoPage() {
   const [weeklyGoal, setWeeklyGoal] = useState(1000)
   const [monthlyGoal, setMonthlyGoal] = useState(4000)
 
-  const [showExportModal, setShowExportModal] = useState(false)
-  const [allRides, setAllRides] = useState<Ride[]>([])
-  const [allExpenses, setAllExpenses] = useState<Expense[]>([])
-  const [allFuels, setAllFuels] = useState<Fuel[]>([])
-  const [allUsers, setAllUsers] = useState<User[]>([])
-
   const [editingRide, setEditingRide] = useState<Ride | null>(null)
   const [editValue, setEditValue] = useState("")
   const [editCommission, setEditCommission] = useState("")
@@ -61,7 +54,6 @@ export default function HistoricoPage() {
       fetchGoals()
       fetchExpenses()
       fetchRentalRates()
-      fetchAllData()
     }
   }, [user, selectedMonth, selectedYear])
 
@@ -121,34 +113,6 @@ export default function HistoricoPage() {
       .eq("year", selectedYear)
 
     setRentalRates(data || [])
-  }
-
-  async function fetchAllData() {
-    if (!user) return
-
-    const { data: ridesData } = await getSupabase()
-      .from("rides")
-      .select("*")
-      .eq("user_id", user.id)
-
-    const { data: expensesData } = await getSupabase()
-      .from("expenses")
-      .select("*")
-      .eq("user_id", user.id)
-
-    const { data: fuelsData } = await getSupabase()
-      .from("fuel")
-      .select("*")
-      .eq("user_id", user.id)
-
-    const { data: usersData } = await getSupabase()
-      .from("users")
-      .select("*")
-
-    setAllRides(ridesData || [])
-    setAllExpenses(expensesData || [])
-    setAllFuels(fuelsData || [])
-    setAllUsers(usersData || [])
   }
 
   async function fetchRides() {
@@ -408,15 +372,7 @@ export default function HistoricoPage() {
 
   return (
     <main className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Histórico</h2>
-        <button
-          onClick={() => setShowExportModal(true)}
-          className="px-4 py-2 bg-taxi-primary text-white text-sm font-medium rounded-xl"
-        >
-          📄 Exportar
-        </button>
-      </div>
+      <h2 className="text-xl font-bold mb-6">Histórico</h2>
 
       <div className="flex gap-2 mb-4">
         <select
@@ -1039,17 +995,6 @@ export default function HistoricoPage() {
             </div>
         </>
       )}
-
-      <ExportModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        rides={allRides}
-        expenses={allExpenses}
-        fuels={allFuels}
-        users={allUsers}
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-      />
     </main>
   )
 }
