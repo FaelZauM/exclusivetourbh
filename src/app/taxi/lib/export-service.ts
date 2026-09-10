@@ -30,6 +30,29 @@ interface Summary {
   totalFuels: number
 }
 
+function getCategoryLabelPtBr(category: string): string {
+  const labels: Record<string, string> = {
+    app: "App",
+    taximeter: "Taxímetro",
+    cooperative: "Cooperativa",
+    private: "Particular",
+    invoiced: "Faturado",
+  }
+  return labels[category] || category
+}
+
+function getExpenseCategoryLabelPtBr(category: string): string {
+  const labels: Record<string, string> = {
+    fuel: "Combustível",
+    wash: "Lavagem",
+    food: "Alimentação",
+    maintenance: "Manutenção",
+    other: "Outros",
+    km_tracking: "Rastreamento KM",
+  }
+  return labels[category] || category
+}
+
 export function calculateSummary(
   rides: Ride[],
   expenses: Expense[],
@@ -44,7 +67,14 @@ export function calculateSummary(
     }
     return sum + r.value
   }, 0)
-  const totalGasolina = fuels.reduce((sum, f) => sum + f.total_value, 0)
+  
+  // Gasolina vem da tabela fuels E dos gastos com category "fuel"
+  const totalFromFuels = fuels.reduce((sum, f) => sum + f.total_value, 0)
+  const totalFromExpenses = expenses
+    .filter((e) => e.category === "fuel")
+    .reduce((sum, e) => sum + e.value, 0)
+  const totalGasolina = totalFromFuels + totalFromExpenses
+  
   const totalLiquidoPosGasolina = totalLiquido - totalGasolina
 
   return {
@@ -121,7 +151,7 @@ export function generatePDF(data: ExportData): void {
             ...data.rides.map((ride) => [
               new Date(ride.ride_date).toLocaleDateString("pt-BR"),
               ride.type === "own" ? "Própria" : "Passada",
-              ride.category,
+              getCategoryLabelPtBr(ride.category),
               `R$ ${ride.value.toFixed(2)}`,
               ride.driver_name || "-",
               ride.passenger_name || "-",
@@ -148,7 +178,7 @@ export function generatePDF(data: ExportData): void {
                   ["Data", "Categoria", "Descrição", "Valor"],
                   ...data.expenses.map((expense) => [
                     new Date(expense.expense_date).toLocaleDateString("pt-BR"),
-                    expense.category,
+                    getExpenseCategoryLabelPtBr(expense.category),
                     expense.description || "-",
                     `R$ ${expense.value.toFixed(2)}`,
                   ]),
@@ -222,7 +252,7 @@ export function generateCSV(data: ExportData): { rides: string; expenses: string
     data.rides.map((ride) => ({
       Data: new Date(ride.ride_date).toLocaleDateString("pt-BR"),
       Tipo: ride.type === "own" ? "Própria" : "Passada",
-      Categoria: ride.category,
+      Categoria: getCategoryLabelPtBr(ride.category),
       Valor: ride.value.toFixed(2),
       Comissão: ride.commission?.toFixed(2) || "",
       Motorista: ride.driver_name || "",
@@ -236,7 +266,7 @@ export function generateCSV(data: ExportData): { rides: string; expenses: string
   const expensesCSV = Papa.unparse(
     data.expenses.map((expense) => ({
       Data: new Date(expense.expense_date).toLocaleDateString("pt-BR"),
-      Categoria: expense.category,
+      Categoria: getExpenseCategoryLabelPtBr(expense.category),
       Descrição: expense.description || "",
       Valor: expense.value.toFixed(2),
     }))
