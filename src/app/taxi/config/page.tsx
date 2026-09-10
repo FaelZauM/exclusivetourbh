@@ -23,7 +23,6 @@ export default function SettingsPage() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [allRides, setAllRides] = useState<Ride[]>([])
   const [allExpenses, setAllExpenses] = useState<Expense[]>([])
-  const [allFuels, setAllFuels] = useState<Fuel[]>([])
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [loadingExport, setLoadingExport] = useState(false)
 
@@ -115,18 +114,12 @@ export default function SettingsPage() {
       .select("*")
       .eq("user_id", user.id)
 
-    const { data: fuelsData } = await getSupabase()
-      .from("fuel")
-      .select("*")
-      .eq("user_id", user.id)
-
     const { data: usersData } = await getSupabase()
       .from("users")
       .select("*")
 
     setAllRides(ridesData || [])
     setAllExpenses(expensesData || [])
-    setAllFuels(fuelsData || [])
     setAllUsers(usersData || [])
     setLoadingExport(false)
     setShowExportModal(true)
@@ -271,7 +264,6 @@ export default function SettingsPage() {
         onClose={() => setShowExportModal(false)}
         rides={allRides}
         expenses={allExpenses}
-        fuels={allFuels}
         users={allUsers}
         selectedMonth={new Date().getMonth() + 1}
         selectedYear={new Date().getFullYear()}

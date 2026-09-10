@@ -14,7 +14,7 @@ if (typeof window !== "undefined") {
 interface ExportData {
   rides: Ride[]
   expenses: Expense[]
-  fuels: Fuel[]
+  fuels: Expense[] // Agora são expenses com category "fuel"
   users: User[]
   period: string
   userName: string
@@ -56,7 +56,7 @@ function getExpenseCategoryLabelPtBr(category: string): string {
 export function calculateSummary(
   rides: Ride[],
   expenses: Expense[],
-  fuels: Fuel[],
+  fuels: Expense[],
   userId: string
 ): Summary {
   const totalBruto = rides.reduce((sum, r) => sum + r.value, 0)
@@ -68,12 +68,10 @@ export function calculateSummary(
     return sum + r.value
   }, 0)
   
-  // Gasolina vem da tabela fuels E dos gastos com category "fuel"
-  const totalFromFuels = fuels.reduce((sum, f) => sum + f.total_value, 0)
-  const totalFromExpenses = expenses
+  // Gasolina vem dos expenses com category "fuel"
+  const totalGasolina = expenses
     .filter((e) => e.category === "fuel")
     .reduce((sum, e) => sum + e.value, 0)
-  const totalGasolina = totalFromFuels + totalFromExpenses
   
   const totalLiquidoPosGasolina = totalLiquido - totalGasolina
 
@@ -83,8 +81,8 @@ export function calculateSummary(
     totalGasolina,
     totalLiquidoPosGasolina,
     totalRides: rides.length,
-    totalExpenses: expenses.length,
-    totalFuels: fuels.length,
+    totalExpenses: expenses.filter((e) => e.category !== "fuel").length,
+    totalFuels: expenses.filter((e) => e.category === "fuel").length,
   }
 }
 
@@ -163,11 +161,11 @@ export function generatePDF(data: ExportData): void {
       },
       { text: "\n" },
 
-      // Expenses table
-      ...(data.expenses.length > 0
+      // Fuel table (gasolina)
+      ...(data.fuels.length > 0
         ? [
             {
-              text: "GASTOS",
+              text: "ABASTECIMENTOS",
               style: "sectionHeader" as const,
             },
             {
@@ -176,11 +174,11 @@ export function generatePDF(data: ExportData): void {
                 widths: ["auto", "auto", "*", "auto"],
                 body: [
                   ["Data", "Categoria", "Descrição", "Valor"],
-                  ...data.expenses.map((expense) => [
-                    new Date(expense.expense_date).toLocaleDateString("pt-BR"),
-                    getExpenseCategoryLabelPtBr(expense.category),
-                    expense.description || "-",
-                    `R$ ${expense.value.toFixed(2)}`,
+                  ...data.fuels.map((fuel) => [
+                    new Date(fuel.expense_date).toLocaleDateString("pt-BR"),
+                    getExpenseCategoryLabelPtBr(fuel.category),
+                    fuel.description || "-",
+                    `R$ ${fuel.value.toFixed(2)}`,
                   ]),
                 ],
               },
@@ -191,25 +189,27 @@ export function generatePDF(data: ExportData): void {
           ]
         : []),
 
-      // Fuel table
-      ...(data.fuels.length > 0
+      // Other expenses table
+      ...(data.expenses.filter((e) => e.category !== "fuel").length > 0
         ? [
             {
-              text: "ABASTECIMENTOS",
+              text: "OUTROS GASTOS",
               style: "sectionHeader" as const,
             },
             {
               table: {
                 headerRows: 1,
-                widths: ["auto", "auto", "auto", "auto"],
+                widths: ["auto", "auto", "*", "auto"],
                 body: [
-                  ["Data", "Litros", "Preço/L", "Total"],
-                  ...data.fuels.map((fuel) => [
-                    new Date(fuel.fuel_date).toLocaleDateString("pt-BR"),
-                    `${fuel.liters || "-"}`,
-                    `R$ ${fuel.price_per_liter?.toFixed(2) || "-"}`,
-                    `R$ ${fuel.total_value.toFixed(2)}`,
-                  ]),
+                  ["Data", "Categoria", "Descrição", "Valor"],
+                  ...data.expenses
+                    .filter((e) => e.category !== "fuel")
+                    .map((expense) => [
+                      new Date(expense.expense_date).toLocaleDateString("pt-BR"),
+                      getExpenseCategoryLabelPtBr(expense.category),
+                      expense.description || "-",
+                      `R$ ${expense.value.toFixed(2)}`,
+                    ]),
                 ],
               },
               layout: "lightHorizontalLines",

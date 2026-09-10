@@ -9,7 +9,6 @@ interface ExportModalProps {
   onClose: () => void
   rides: Ride[]
   expenses: Expense[]
-  fuels: Fuel[]
   users: User[]
   selectedMonth: number
   selectedYear: number
@@ -20,7 +19,6 @@ export function ExportModal({
   onClose,
   rides,
   expenses,
-  fuels,
   users,
   selectedMonth,
   selectedYear,
@@ -81,10 +79,12 @@ export function ExportModal({
     })
   }
 
-  function getFilteredFuels(): Fuel[] {
+  function getFilteredFuels(): Expense[] {
+    // Gasolina vem da tabela expenses com category "fuel"
     if (periodType === "current") {
-      return fuels.filter((f) => {
-        const d = new Date(f.fuel_date)
+      return expenses.filter((e) => {
+        if (e.category !== "fuel") return false
+        const d = new Date(e.expense_date)
         return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear
       })
     }
@@ -92,8 +92,9 @@ export function ExportModal({
     const startDate = new Date(startYear, startMonth - 1, 1)
     const endDate = new Date(endYear, endMonth, 0, 23, 59, 59)
 
-    return fuels.filter((f) => {
-      const d = new Date(f.fuel_date)
+    return expenses.filter((e) => {
+      if (e.category !== "fuel") return false
+      const d = new Date(e.expense_date)
       return d >= startDate && d <= endDate
     })
   }
@@ -106,10 +107,15 @@ export function ExportModal({
     const filteredExpenses = getFilteredExpenses()
     const filteredFuels = getFilteredFuels()
 
+    // Gasolina são os expenses com category "fuel"
+    // Gastos são os expenses SEM category "fuel"
+    const gasolinaExpenses = filteredFuels
+    const outrosExpenses = filteredExpenses.filter((e) => e.category !== "fuel")
+
     const exportData = {
       rides: filteredRides,
-      expenses: filteredExpenses,
-      fuels: filteredFuels,
+      expenses: [...gasolinaExpenses, ...outrosExpenses],
+      fuels: [], // Não usamos mais a tabela fuel
       users,
       period,
       userName: users[0]?.nome || "Usuário",
