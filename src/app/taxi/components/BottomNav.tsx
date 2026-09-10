@@ -16,7 +16,11 @@ const adminNavItems = [
 ]
 
 const driverNavItems = [
-  { href: "/taxi/convites", label: "Convites", icon: "📩" },
+  { href: "/taxi/aluguel", label: "Aluguel", icon: "🔑" },
+]
+
+const developerNavItems = [
+  { href: "/taxi/dev", label: "Dev", icon: "🛠️" },
 ]
 
 export function BottomNav() {
@@ -24,14 +28,16 @@ export function BottomNav() {
   const { user } = useAuth()
 
   let items = navItems
-  if (user?.role === "admin") {
+  if (user?.role === "developer") {
+    items = [...navItems, ...developerNavItems]
+  } else if (user?.role === "admin") {
     items = [...navItems, ...adminNavItems]
-  } else {
+  } else if (user?.role === "driver") {
     items = [...navItems, ...driverNavItems]
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-taxi-gray-200 px-4 py-2">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-taxi-gray-200 dark:border-gray-700 px-4 py-2 z-50">
       <div className="flex justify-around">
         {items.map((item) => (
           <Link
@@ -40,7 +46,7 @@ export function BottomNav() {
             className={`flex flex-col items-center py-2 px-3 rounded-lg ${
               pathname === item.href
                 ? "text-taxi-primary"
-                : "text-taxi-gray-500"
+                : "text-taxi-gray-500 dark:text-gray-400"
             }`}
           >
             <span className="text-xl">{item.icon}</span>

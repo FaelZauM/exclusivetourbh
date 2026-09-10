@@ -42,10 +42,19 @@ export default function ConvitesPage() {
   }
 
   async function handleAcceptInvitation(invitationId: string) {
+    // Update invitation status
     await getSupabase()
       .from("driver_invitations")
       .update({ status: "accepted" })
       .eq("id", invitationId)
+
+    // Update user role from "user" to "driver"
+    if (user) {
+      await getSupabase()
+        .from("users")
+        .update({ role: "driver" })
+        .eq("id", user.id)
+    }
 
     fetchInvitations()
   }

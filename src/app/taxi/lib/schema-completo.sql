@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS fuel (
 CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  category TEXT NOT NULL CHECK (category IN ('fuel', 'wash', 'food', 'maintenance', 'other')),
+  category TEXT NOT NULL CHECK (category IN ('fuel', 'wash', 'food', 'maintenance', 'rent', 'other')),
   value DECIMAL(10,2) NOT NULL,
   description TEXT,
   expense_date TIMESTAMP WITH TIME ZONE NOT NULL,

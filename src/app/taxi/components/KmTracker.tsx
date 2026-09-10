@@ -14,35 +14,33 @@ export function KmTracker({ onSuccess }: KmTrackerProps) {
   const [kmEnd, setKmEnd] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [todayKm, setTodayKm] = useState<{ km_start?: number; km_end?: number } | null>(null)
+  const [todayKmId, setTodayKmId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (user) {
-      fetchTodayKm()
-    }
+    if (user) fetchTodayKm()
   }, [user])
 
   async function fetchTodayKm() {
     if (!user) return
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const today = new Date().toISOString().split("T")[0]
 
     const { data } = await getSupabase()
-      .from("fuel")
-      .select("km_start, km_end")
+      .from("km_tracking")
+      .select("id, km_start, km_end")
       .eq("user_id", user.id)
-      .gte("fuel_date", today.toISOString())
-      .lt("fuel_date", tomorrow.toISOString())
+      .eq("tracking_date", today)
       .limit(1)
       .single()
 
     if (data) {
-      setTodayKm(data)
+      setTodayKmId(data.id)
       setKmStart(data.km_start?.toString() || "")
       setKmEnd(data.km_end?.toString() || "")
+    } else {
+      setTodayKmId(null)
+      setKmStart("")
+      setKmEnd("")
     }
   }
 
@@ -53,41 +51,37 @@ export function KmTracker({ onSuccess }: KmTrackerProps) {
     setLoading(true)
     setSuccess(false)
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const today = new Date().toISOString().split("T")[0]
+    const kmStartVal = kmStart ? parseFloat(kmStart) : null
+    const kmEndVal = kmEnd ? parseFloat(kmEnd) : null
 
-    if (todayKm) {
+    if (todayKmId) {
       const { error } = await getSupabase()
-        .from("fuel")
-        .update({
-          km_start: kmStart ? parseFloat(kmStart) : null,
-          km_end: kmEnd ? parseFloat(kmEnd) : null,
-        })
-        .eq("user_id", user.id)
-        .gte("fuel_date", today.toISOString())
-        .lt("fuel_date", tomorrow.toISOString())
+        .from("km_tracking")
+        .update({ km_start: kmStartVal, km_end: kmEndVal })
+        .eq("id", todayKmId)
 
       setLoading(false)
       if (!error) {
         setSuccess(true)
-        fetchTodayKm()
         onSuccess?.()
       }
     } else {
-      const { error } = await getSupabase().from("fuel").insert({
-        user_id: user.id,
-        fuel_date: today.toISOString(),
-        total_value: 0,
-        km_start: kmStart ? parseFloat(kmStart) : null,
-        km_end: kmEnd ? parseFloat(kmEnd) : null,
-      })
+      const { data, error } = await getSupabase()
+        .from("km_tracking")
+        .insert({
+          user_id: user.id,
+          tracking_date: today,
+          km_start: kmStartVal,
+          km_end: kmEndVal,
+        })
+        .select("id")
+        .single()
 
       setLoading(false)
-      if (!error) {
+      if (!error && data) {
+        setTodayKmId(data.id)
         setSuccess(true)
-        fetchTodayKm()
         onSuccess?.()
       }
     }

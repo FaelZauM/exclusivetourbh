@@ -26,7 +26,7 @@ export function RideForm({ onSuccess }: RideFormProps) {
   const [rideTime, setRideTime] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const showLocations = ["cooperative", "invoiced"].includes(category)
+  const showLocations = ["cooperative", "invoiced", "private"].includes(category)
   const showCommission = type === "passed"
   const showDispatcher = category === "cooperative"
   const showCompanyName = category === "invoiced"

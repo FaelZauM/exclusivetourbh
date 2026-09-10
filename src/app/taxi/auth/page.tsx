@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useAuth } from "../lib/auth-context"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function AuthPage() {
   const [email, setEmail] = useState("")
@@ -66,6 +67,13 @@ export default function AuthPage() {
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
+
+        <p className="text-center mt-6 text-sm text-taxi-gray-500">
+          Não tem conta?{" "}
+          <Link href="/taxi/cadastro" className="text-taxi-primary font-medium hover:underline">
+            Cadastre-se
+          </Link>
+        </p>
       </div>
     </main>
   )

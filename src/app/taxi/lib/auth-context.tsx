@@ -9,6 +9,8 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error?: string }>
   signOut: () => Promise<void>
+  refreshUser: () => Promise<void>
+  isPending: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +18,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signIn: async () => ({}),
   signOut: async () => {},
+  refreshUser: async () => {},
+  isPending: false,
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -102,8 +106,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
   }
 
+  async function refreshUser() {
+    const { data: { session } } = await getSupabase().auth.getSession()
+    if (session?.user) {
+      await fetchUserProfile(session.user.id)
+    }
+  }
+
+  const isPending = user?.status === "pending"
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, refreshUser, isPending }}>
       {children}
     </AuthContext.Provider>
   )

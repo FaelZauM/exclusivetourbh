@@ -4,20 +4,36 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ExpenseForm } from "../components/ExpenseForm"
-import type { Expense } from "../lib/types"
+import type { Expense, RentalRate } from "../lib/types"
+
+interface FuelEntry {
+  id: string
+  user_id: string
+  fuel_date: string
+  total_value: number
+  liters: number | null
+  price_per_liter: number | null
+  source?: string
+}
 
 export default function GastosPage() {
   const { user } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [editValue, setEditValue] = useState("")
   const [editDescription, setEditDescription] = useState("")
   const [editLoading, setEditLoading] = useState(false)
+  const [rentalRate, setRentalRate] = useState<RentalRate | null>(null)
+  const [dailyRate, setDailyRate] = useState("")
+  const [savingRate, setSavingRate] = useState(false)
 
   useEffect(() => {
     if (user) {
       fetchExpenses()
+      fetchFuelEntries()
+      fetchRentalRate()
     }
   }, [user])
 
@@ -40,6 +56,105 @@ export default function GastosPage() {
     setExpenses(data || [])
     setLoading(false)
   }
+
+  async function fetchFuelEntries() {
+    if (!user) return
+
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    const prefix = `${year}-${month}`
+
+    const { data } = await getSupabase()
+      .from("expenses")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("category", "fuel")
+      .like("expense_date", `${prefix}%`)
+      .order("expense_date", { ascending: false })
+    setFuelEntries((data || []).map(e => ({
+      id: e.id,
+      user_id: e.user_id,
+      fuel_date: e.expense_date,
+      total_value: e.value,
+      liters: null,
+      price_per_liter: null,
+    })))
+  }
+
+  async function fetchRentalRate() {
+    if (!user) return
+
+    const now = new Date()
+    const month = now.getMonth() + 1
+    const year = now.getFullYear()
+
+    const { data } = await getSupabase()
+      .from("rental_rates")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("month", month)
+      .eq("year", year)
+      .limit(1)
+
+    if (data && data.length > 0) {
+      setRentalRate(data[0])
+      setDailyRate(data[0].daily_rate.toString())
+    } else {
+      setRentalRate(null)
+      setDailyRate("")
+    }
+  }
+
+  async function saveRentalRate() {
+    if (!user || !dailyRate) return
+
+    setSavingRate(true)
+    const now = new Date()
+    const month = now.getMonth() + 1
+    const year = now.getFullYear()
+    const rate = parseFloat(dailyRate)
+
+    if (rentalRate) {
+      const { error } = await getSupabase()
+        .from("rental_rates")
+        .update({ daily_rate: rate })
+        .eq("id", rentalRate.id)
+
+      if (!error) {
+        setRentalRate({ ...rentalRate, daily_rate: rate })
+      }
+    } else {
+      const { data, error } = await getSupabase()
+        .from("rental_rates")
+        .insert({
+          user_id: user.id,
+          daily_rate: rate,
+          month,
+          year,
+        })
+        .select()
+        .single()
+
+      if (!error && data) {
+        setRentalRate(data)
+      }
+    }
+
+    setSavingRate(false)
+  }
+
+  function getDaysInMonth(): number {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  }
+
+  function getCurrentDay(): number {
+    return new Date().getDate()
+  }
+
+  const totalRent = rentalRate ? rentalRate.daily_rate * getDaysInMonth() : 0
+  const rentPaid = rentalRate ? rentalRate.daily_rate * getCurrentDay() : 0
 
   function startEdit(expense: Expense) {
     setEditingExpense(expense)
@@ -77,6 +192,8 @@ export default function GastosPage() {
   }
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.value, 0)
+  const totalFuel = fuelEntries.reduce((sum, fuel) => sum + fuel.total_value, 0)
+  const totalAllExpenses = totalExpenses + totalFuel
 
   const categoryLabels: Record<string, string> = {
     fuel: "Combustível",
@@ -88,7 +205,7 @@ export default function GastosPage() {
 
   const categoryIcons: Record<string, string> = {
     fuel: "⛽",
-    wash: "🚗",
+    wash: "🚕",
     food: "🍔",
     maintenance: "🔧",
     other: "📦",
@@ -101,26 +218,94 @@ export default function GastosPage() {
         <div className="p-4 bg-taxi-gray-50 rounded-xl">
           <p className="text-sm text-taxi-gray-500">Total do Mês</p>
           <p className="text-2xl font-bold text-taxi-danger">
-            R$ {totalExpenses.toFixed(2)}
+            R$ {totalAllExpenses.toFixed(2)}
           </p>
           <p className="text-xs text-taxi-gray-500 mt-1">
-            {expenses.length} gastos registrados
+            {expenses.length + fuelEntries.length} gastos registrados
           </p>
         </div>
       </div>
 
+      {/* Diária de Aluguel */}
+      <div className="mb-6 p-4 bg-white border border-taxi-gray-200 rounded-xl">
+        <h3 className="font-semibold mb-3">🚕 Diária de Aluguel</h3>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="number"
+            step="0.01"
+            value={dailyRate}
+            onChange={(e) => setDailyRate(e.target.value)}
+            placeholder="Valor da diária (R$)"
+            className="flex-1 px-3 py-2 border border-taxi-gray-200 rounded-lg text-sm"
+          />
+          <button
+            onClick={saveRentalRate}
+            disabled={savingRate || !dailyRate}
+            className="px-4 py-2 bg-taxi-primary text-white text-sm font-medium rounded-lg"
+          >
+            {savingRate ? "..." : "Salvar"}
+          </button>
+        </div>
+        {rentalRate && (
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-taxi-gray-500">Diária:</span>
+              <span className="font-medium">R$ {rentalRate.daily_rate.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-taxi-gray-500">Dias no mês:</span>
+              <span className="font-medium">{getDaysInMonth()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-taxi-gray-500">Total do mês:</span>
+              <span className="font-bold text-taxi-danger">R$ {totalRent.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t border-taxi-gray-100 pt-1 mt-1">
+              <span className="text-taxi-gray-500">Até hoje ({getCurrentDay()} dias):</span>
+              <span className="font-medium text-orange-600">R$ {rentPaid.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="mb-6">
-        <ExpenseForm onSuccess={fetchExpenses} />
+        <ExpenseForm onSuccess={() => { fetchExpenses(); fetchFuelEntries() }} />
       </div>
 
       {loading ? (
         <p className="text-center text-taxi-gray-500">Carregando...</p>
-      ) : expenses.length === 0 ? (
+      ) : expenses.length === 0 && fuelEntries.length === 0 ? (
         <p className="text-center text-taxi-gray-500 py-8">
           Nenhum gasto registrado este mês.
         </p>
       ) : (
         <div className="space-y-2">
+          {fuelEntries.map((fuel) => (
+            <div
+              key={fuel.id}
+              className="p-4 bg-white border border-taxi-gray-200 rounded-xl"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">⛽</span>
+                  <div>
+                    <p className="font-medium">Combustível</p>
+                    {fuel.liters && (
+                      <p className="text-sm text-taxi-gray-500">
+                        {fuel.liters}L {fuel.price_per_liter && `@ R$${fuel.price_per_liter}/L`}
+                      </p>
+                    )}
+                    <p className="text-xs text-taxi-gray-500">
+                      {new Date(fuel.fuel_date).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+                <p className="font-bold text-taxi-danger">
+                  R$ {fuel.total_value.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          ))}
           {expenses.map((expense) => (
             <div
               key={expense.id}

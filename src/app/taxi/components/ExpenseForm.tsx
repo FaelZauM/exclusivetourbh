@@ -12,7 +12,7 @@ type ExpenseCategory = "fuel" | "wash" | "food" | "maintenance" | "other"
 
 const categories: { value: ExpenseCategory; label: string; icon: string }[] = [
   { value: "fuel", label: "Combustível", icon: "⛽" },
-  { value: "wash", label: "Lavagem", icon: "🚗" },
+  { value: "wash", label: "Lavagem", icon: "🚕" },
   { value: "food", label: "Alimentação", icon: "🍔" },
   { value: "maintenance", label: "Manutenção", icon: "🔧" },
   { value: "other", label: "Outros", icon: "📦" },
@@ -22,6 +22,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const { user } = useAuth()
   const [category, setCategory] = useState<ExpenseCategory>("fuel")
   const [value, setValue] = useState("")
+  const [pricePerLiter, setPricePerLiter] = useState("")
   const [description, setDescription] = useState("")
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0])
   const [loading, setLoading] = useState(false)
@@ -32,25 +33,42 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
     setLoading(true)
 
-    const { error } = await getSupabase().from("expenses").insert({
-      user_id: user.id,
-      category,
-      value: parseFloat(value),
-      description: description || null,
-      expense_date: new Date(expenseDate + "T12:00:00").toISOString(),
-    })
-
-    setLoading(false)
-
-    if (!error) {
-      onSuccess()
-      resetForm()
+    if (category === "fuel") {
+      const totalVal = parseFloat(value)
+      const priceVal = pricePerLiter ? parseFloat(pricePerLiter) : null
+      const litersVal = priceVal && totalVal ? totalVal / priceVal : null
+      const { error } = await getSupabase().from("expenses").insert({
+        user_id: user.id,
+        category: "fuel",
+        value: totalVal,
+        description: pricePerLiter ? `${litersVal?.toFixed(2)}L @ R$${pricePerLiter}/L` : null,
+        expense_date: new Date(expenseDate + "T12:00:00").toISOString(),
+      })
+      setLoading(false)
+      if (!error) {
+        onSuccess()
+        resetForm()
+      }
+    } else {
+      const { error } = await getSupabase().from("expenses").insert({
+        user_id: user.id,
+        category,
+        value: parseFloat(value),
+        description: description || null,
+        expense_date: new Date(expenseDate + "T12:00:00").toISOString(),
+      })
+      setLoading(false)
+      if (!error) {
+        onSuccess()
+        resetForm()
+      }
     }
   }
 
   function resetForm() {
     setCategory("fuel")
     setValue("")
+    setPricePerLiter("")
     setDescription("")
     setExpenseDate(new Date().toISOString().split("T")[0])
   }
@@ -102,6 +120,25 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
           required
         />
       </div>
+
+      {category === "fuel" && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Preço por litro (R$)</label>
+          <input
+            type="number"
+            step="0.01"
+            value={pricePerLiter}
+            onChange={(e) => setPricePerLiter(e.target.value)}
+            className="w-full px-4 py-3 border border-taxi-gray-200 rounded-xl"
+            placeholder="Ex: 5.89"
+          />
+          {pricePerLiter && value && (
+            <p className="text-xs text-taxi-gray-500 mt-1">
+              ≈ {(parseFloat(value) / parseFloat(pricePerLiter)).toFixed(2)} litros
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium mb-1">Descrição (opcional)</label>

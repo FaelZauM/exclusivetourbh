@@ -208,7 +208,9 @@ export function RideList({ rides, onDelete, onRefresh, currentUserId, drivers = 
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold">{getCategoryLabel(ride.category)}</span>
+                <span className="font-semibold">
+                  {ride.category === "invoiced" ? `Faturado${ride.company_name ? ` - ${ride.company_name}` : ""}` : getCategoryLabel(ride.category)}
+                </span>
                 <span className="text-xs text-taxi-gray-500">
                   {ride.type === "own" ? "Particular" : "Passada"}
                 </span>
@@ -250,7 +252,7 @@ export function RideList({ rides, onDelete, onRefresh, currentUserId, drivers = 
               <p className="font-bold text-taxi-success">
                 R$ {getEarnings(ride).toFixed(2)}
               </p>
-              {ride.type === "passed" && ride.commission && (
+              {ride.type === "passed" && ride.commission && !ride.added_by_admin && (
                 <p className="text-xs text-taxi-gray-500">
                   Total: R$ {ride.value.toFixed(2)} | Motorista: R$ {ride.commission.toFixed(2)}
                 </p>
