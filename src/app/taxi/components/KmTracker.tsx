@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
+import { useToast } from "../lib/toast-context"
 
 interface KmTrackerProps {
   onSuccess?: () => void
@@ -10,6 +11,7 @@ interface KmTrackerProps {
 
 export function KmTracker({ onSuccess }: KmTrackerProps) {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [kmStart, setKmStart] = useState("")
   const [kmEnd, setKmEnd] = useState("")
   const [loading, setLoading] = useState(false)
@@ -55,35 +57,37 @@ export function KmTracker({ onSuccess }: KmTrackerProps) {
     const kmStartVal = kmStart ? parseFloat(kmStart) : null
     const kmEndVal = kmEnd ? parseFloat(kmEnd) : null
 
-    if (todayKmId) {
-      const { error } = await getSupabase()
-        .from("km_tracking")
-        .update({ km_start: kmStartVal, km_end: kmEndVal })
-        .eq("id", todayKmId)
+    try {
+      if (todayKmId) {
+        const { error } = await getSupabase()
+          .from("km_tracking")
+          .update({ km_start: kmStartVal, km_end: kmEndVal })
+          .eq("id", todayKmId)
 
-      setLoading(false)
-      if (!error) {
-        setSuccess(true)
-        onSuccess?.()
-      }
-    } else {
-      const { data, error } = await getSupabase()
-        .from("km_tracking")
-        .insert({
-          user_id: user.id,
-          tracking_date: today,
-          km_start: kmStartVal,
-          km_end: kmEndVal,
-        })
-        .select("id")
-        .single()
+        if (error) throw error
+      } else {
+        const { data, error } = await getSupabase()
+          .from("km_tracking")
+          .insert({
+            user_id: user.id,
+            tracking_date: today,
+            km_start: kmStartVal,
+            km_end: kmEndVal,
+          })
+          .select("id")
+          .single()
 
-      setLoading(false)
-      if (!error && data) {
-        setTodayKmId(data.id)
-        setSuccess(true)
-        onSuccess?.()
+        if (error) throw error
+        if (data) setTodayKmId(data.id)
       }
+
+      setSuccess(true)
+      showToast("KM salvo!", "success")
+      onSuccess?.()
+    } catch {
+      showToast("Erro ao salvar KM", "error")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -129,9 +133,17 @@ export function KmTracker({ onSuccess }: KmTrackerProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50"
+        className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? "Salvando..." : "Salvar KM"}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Salvando...
+          </span>
+        ) : "Salvar KM"}
       </button>
     </form>
   )

@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { generatePDF, generateCSV, downloadCSV } from "../lib/export-service"
+import { useToast } from "../lib/toast-context"
 import type { Ride, Expense, Fuel, User } from "../lib/types"
 
 interface ExportModalProps {
@@ -23,6 +24,7 @@ export function ExportModal({
   selectedMonth,
   selectedYear,
 }: ExportModalProps) {
+  const { showToast } = useToast()
   const [periodType, setPeriodType] = useState<"current" | "custom">("current")
   const [startMonth, setStartMonth] = useState(selectedMonth)
   const [startYear, setStartYear] = useState(selectedYear)
@@ -30,6 +32,17 @@ export function ExportModal({
   const [endYear, setEndYear] = useState(selectedYear)
   const [format, setFormat] = useState<"pdf" | "csv">("pdf")
   const [loading, setLoading] = useState(false)
+  const closeRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", handleEscape)
+    closeRef.current?.focus()
+    return () => document.removeEventListener("keydown", handleEscape)
+  }, [isOpen, onClose])
 
   const monthNames = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -80,7 +93,6 @@ export function ExportModal({
   }
 
   function getFilteredFuels(): Expense[] {
-    // Gasolina vem da tabela expenses com category "fuel"
     if (periodType === "current") {
       return expenses.filter((e) => {
         if (e.category !== "fuel") return false
@@ -102,57 +114,71 @@ export function ExportModal({
   async function handleExport() {
     setLoading(true)
 
-    const period = getPeriod()
-    const filteredRides = getFilteredRides()
-    const filteredExpenses = getFilteredExpenses()
-    const filteredFuels = getFilteredFuels()
+    try {
+      const period = getPeriod()
+      const filteredRides = getFilteredRides()
+      const filteredExpenses = getFilteredExpenses()
+      const filteredFuels = getFilteredFuels()
 
-    // Gasolina são os expenses com category "fuel"
-    // Gastos são os expenses SEM category "fuel"
-    const gasolinaExpenses = filteredFuels
-    const outrosExpenses = filteredExpenses.filter((e) => e.category !== "fuel")
+      const gasolinaExpenses = filteredFuels
+      const outrosExpenses = filteredExpenses.filter((e) => e.category !== "fuel")
 
-    const exportData = {
-      rides: filteredRides,
-      expenses: [...gasolinaExpenses, ...outrosExpenses],
-      fuels: [], // Não usamos mais a tabela fuel
-      users,
-      period,
-      userName: users[0]?.nome || "Usuário",
+      const exportData = {
+        rides: filteredRides,
+        expenses: [...gasolinaExpenses, ...outrosExpenses],
+        fuels: [],
+        users,
+        period,
+        userName: users[0]?.nome || "Usuário",
+      }
+
+      if (format === "pdf") {
+        generatePDF(exportData)
+      } else {
+        const { rides: ridesCSV, expenses: expensesCSV } = generateCSV(exportData)
+        downloadCSV(ridesCSV, `corridas-${period.replace(/\s/g, "-")}.csv`)
+        downloadCSV(expensesCSV, `gastos-${period.replace(/\s/g, "-")}.csv`)
+      }
+
+      showToast("Relatório exportado!", "success")
+      onClose()
+    } catch {
+      showToast("Erro ao exportar relatório", "error")
+    } finally {
+      setLoading(false)
     }
-
-    if (format === "pdf") {
-      generatePDF(exportData)
-    } else {
-      const { rides: ridesCSV, expenses: expensesCSV } = generateCSV(exportData)
-      downloadCSV(ridesCSV, `corridas-${period.replace(/\s/g, "-")}.csv`)
-      downloadCSV(expensesCSV, `gastos-${period.replace(/\s/g, "-")}.csv`)
-    }
-
-    setLoading(false)
-    onClose()
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Exportar relatório"
+    >
       <div className="bg-white rounded-xl w-full max-w-md mx-4 p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-semibold text-lg">Exportar Relatório</h3>
-          <button onClick={onClose} className="text-taxi-gray-500">
+          <button
+            ref={closeRef}
+            onClick={onClose}
+            className="text-taxi-gray-500 hover:text-taxi-gray-700 p-1"
+            aria-label="Fechar modal"
+          >
             ✕
           </button>
         </div>
 
         <div className="space-y-4">
-          {/* Period Type */}
           <div>
             <label className="block text-sm font-medium mb-2">Período</label>
             <div className="flex gap-2">
               <button
                 onClick={() => setPeriodType("current")}
-                className={`flex-1 py-2 rounded-lg text-sm ${
+                aria-pressed={periodType === "current"}
+                className={`flex-1 py-2 rounded-lg text-sm transition-colors ${
                   periodType === "current"
                     ? "bg-taxi-primary text-white"
                     : "bg-taxi-gray-100 text-taxi-gray-600"
@@ -162,7 +188,8 @@ export function ExportModal({
               </button>
               <button
                 onClick={() => setPeriodType("custom")}
-                className={`flex-1 py-2 rounded-lg text-sm ${
+                aria-pressed={periodType === "custom"}
+                className={`flex-1 py-2 rounded-lg text-sm transition-colors ${
                   periodType === "custom"
                     ? "bg-taxi-primary text-white"
                     : "bg-taxi-gray-100 text-taxi-gray-600"
@@ -173,7 +200,6 @@ export function ExportModal({
             </div>
           </div>
 
-          {/* Custom Period */}
           {periodType === "custom" && (
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
@@ -239,13 +265,13 @@ export function ExportModal({
             </div>
           )}
 
-          {/* Format */}
           <div>
             <label className="block text-sm font-medium mb-2">Formato</label>
             <div className="flex gap-2">
               <button
                 onClick={() => setFormat("pdf")}
-                className={`flex-1 py-2 rounded-lg text-sm ${
+                aria-pressed={format === "pdf"}
+                className={`flex-1 py-2 rounded-lg text-sm transition-colors ${
                   format === "pdf"
                     ? "bg-taxi-primary text-white"
                     : "bg-taxi-gray-100 text-taxi-gray-600"
@@ -255,7 +281,8 @@ export function ExportModal({
               </button>
               <button
                 onClick={() => setFormat("csv")}
-                className={`flex-1 py-2 rounded-lg text-sm ${
+                aria-pressed={format === "csv"}
+                className={`flex-1 py-2 rounded-lg text-sm transition-colors ${
                   format === "csv"
                     ? "bg-taxi-primary text-white"
                     : "bg-taxi-gray-100 text-taxi-gray-600"
@@ -266,13 +293,20 @@ export function ExportModal({
             </div>
           </div>
 
-          {/* Export Button */}
           <button
             onClick={handleExport}
             disabled={loading}
-            className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50"
+            className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Exportando..." : "Exportar"}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Exportando...
+              </span>
+            ) : "Exportar"}
           </button>
         </div>
       </div>

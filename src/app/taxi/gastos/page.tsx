@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
+import { useToast } from "../lib/toast-context"
 import { ExpenseForm } from "../components/ExpenseForm"
+import { ExpenseCardSkeleton, StatsSkeleton } from "../components/Skeleton"
 import type { Expense, RentalRate } from "../lib/types"
 
 interface FuelEntry {
@@ -18,9 +20,11 @@ interface FuelEntry {
 
 export default function GastosPage() {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [editValue, setEditValue] = useState("")
   const [editDescription, setEditDescription] = useState("")
@@ -29,82 +33,98 @@ export default function GastosPage() {
   const [dailyRate, setDailyRate] = useState("")
   const [savingRate, setSavingRate] = useState(false)
 
+  const fetchExpenses = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const now = new Date()
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+
+      const { data, error } = await getSupabase()
+        .from("expenses")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("expense_date", startDate.toISOString())
+        .lte("expense_date", endDate.toISOString())
+        .order("expense_date", { ascending: false })
+
+      if (error) throw error
+      setExpenses(data || [])
+      setError(null)
+    } catch {
+      setError("Erro ao carregar gastos")
+      showToast("Erro ao carregar gastos", "error")
+    } finally {
+      setLoading(false)
+    }
+  }, [user, showToast])
+
+  const fetchFuelEntries = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, "0")
+      const prefix = `${year}-${month}`
+
+      const { data } = await getSupabase()
+        .from("expenses")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("category", "fuel")
+        .like("expense_date", `${prefix}%`)
+        .order("expense_date", { ascending: false })
+
+      setFuelEntries((data || []).map(e => ({
+        id: e.id,
+        user_id: e.user_id,
+        fuel_date: e.expense_date,
+        total_value: e.value,
+        liters: null,
+        price_per_liter: null,
+      })))
+    } catch {
+      // Silent fail for fuel entries
+    }
+  }, [user])
+
+  const fetchRentalRate = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const now = new Date()
+      const month = now.getMonth() + 1
+      const year = now.getFullYear()
+
+      const { data } = await getSupabase()
+        .from("rental_rates")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("month", month)
+        .eq("year", year)
+        .limit(1)
+
+      if (data && data.length > 0) {
+        setRentalRate(data[0])
+        setDailyRate(data[0].daily_rate.toString())
+      } else {
+        setRentalRate(null)
+        setDailyRate("")
+      }
+    } catch {
+      // Silent fail for rental rate
+    }
+  }, [user])
+
   useEffect(() => {
     if (user) {
       fetchExpenses()
       fetchFuelEntries()
       fetchRentalRate()
     }
-  }, [user])
-
-  async function fetchExpenses() {
-    if (!user) return
-
-    setLoading(true)
-    const now = new Date()
-    const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-
-    const { data } = await getSupabase()
-      .from("expenses")
-      .select("*")
-      .eq("user_id", user.id)
-      .gte("expense_date", startDate.toISOString())
-      .lte("expense_date", endDate.toISOString())
-      .order("expense_date", { ascending: false })
-
-    setExpenses(data || [])
-    setLoading(false)
-  }
-
-  async function fetchFuelEntries() {
-    if (!user) return
-
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, "0")
-    const prefix = `${year}-${month}`
-
-    const { data } = await getSupabase()
-      .from("expenses")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("category", "fuel")
-      .like("expense_date", `${prefix}%`)
-      .order("expense_date", { ascending: false })
-    setFuelEntries((data || []).map(e => ({
-      id: e.id,
-      user_id: e.user_id,
-      fuel_date: e.expense_date,
-      total_value: e.value,
-      liters: null,
-      price_per_liter: null,
-    })))
-  }
-
-  async function fetchRentalRate() {
-    if (!user) return
-
-    const now = new Date()
-    const month = now.getMonth() + 1
-    const year = now.getFullYear()
-
-    const { data } = await getSupabase()
-      .from("rental_rates")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("month", month)
-      .eq("year", year)
-      .limit(1)
-
-    if (data && data.length > 0) {
-      setRentalRate(data[0])
-      setDailyRate(data[0].daily_rate.toString())
-    } else {
-      setRentalRate(null)
-      setDailyRate("")
-    }
-  }
+  }, [user, fetchExpenses, fetchFuelEntries, fetchRentalRate])
 
   async function saveRentalRate() {
     if (!user || !dailyRate) return
@@ -115,33 +135,37 @@ export default function GastosPage() {
     const year = now.getFullYear()
     const rate = parseFloat(dailyRate)
 
-    if (rentalRate) {
-      const { error } = await getSupabase()
-        .from("rental_rates")
-        .update({ daily_rate: rate })
-        .eq("id", rentalRate.id)
+    try {
+      if (rentalRate) {
+        const { error } = await getSupabase()
+          .from("rental_rates")
+          .update({ daily_rate: rate })
+          .eq("id", rentalRate.id)
 
-      if (!error) {
+        if (error) throw error
         setRentalRate({ ...rentalRate, daily_rate: rate })
-      }
-    } else {
-      const { data, error } = await getSupabase()
-        .from("rental_rates")
-        .insert({
-          user_id: user.id,
-          daily_rate: rate,
-          month,
-          year,
-        })
-        .select()
-        .single()
+        showToast("Diária atualizada!", "success")
+      } else {
+        const { data, error } = await getSupabase()
+          .from("rental_rates")
+          .insert({
+            user_id: user.id,
+            daily_rate: rate,
+            month,
+            year,
+          })
+          .select()
+          .single()
 
-      if (!error && data) {
+        if (error) throw error
         setRentalRate(data)
+        showToast("Diária salva!", "success")
       }
+    } catch {
+      showToast("Erro ao salvar diária", "error")
+    } finally {
+      setSavingRate(false)
     }
-
-    setSavingRate(false)
   }
 
   function getDaysInMonth(): number {
@@ -180,15 +204,26 @@ export default function GastosPage() {
 
     setEditLoading(false)
 
-    if (!error) {
+    if (error) {
+      showToast("Erro ao atualizar gasto", "error")
+    } else {
+      showToast("Gasto atualizado!", "success")
       setEditingExpense(null)
       fetchExpenses()
     }
   }
 
   async function deleteExpense(id: string) {
+    const prev = expenses
+    setExpenses((e) => e.filter((x) => x.id !== id))
+
     const { error } = await getSupabase().from("expenses").delete().eq("id", id)
-    if (!error) fetchExpenses()
+    if (error) {
+      setExpenses(prev)
+      showToast("Erro ao excluir gasto", "error")
+    } else {
+      showToast("Gasto excluído", "success")
+    }
   }
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.value, 0)
@@ -215,18 +250,21 @@ export default function GastosPage() {
     <main className="p-4">
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-2">Gastos</h2>
-        <div className="p-4 bg-taxi-gray-50 rounded-xl">
-          <p className="text-sm text-taxi-gray-500">Total do Mês</p>
-          <p className="text-2xl font-bold text-taxi-danger">
-            R$ {totalAllExpenses.toFixed(2)}
-          </p>
-          <p className="text-xs text-taxi-gray-500 mt-1">
-            {expenses.length + fuelEntries.length} gastos registrados
-          </p>
-        </div>
+        {loading ? (
+          <StatsSkeleton />
+        ) : (
+          <div className="p-4 bg-taxi-gray-50 rounded-xl">
+            <p className="text-sm text-taxi-gray-500">Total do Mês</p>
+            <p className="text-2xl font-bold text-taxi-danger">
+              R$ {totalAllExpenses.toFixed(2)}
+            </p>
+            <p className="text-xs text-taxi-gray-500 mt-1">
+              {expenses.length + fuelEntries.length} gastos registrados
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Diária de Aluguel */}
       <div className="mb-6 p-4 bg-white border border-taxi-gray-200 rounded-xl">
         <h3 className="font-semibold mb-3">🚕 Diária de Aluguel</h3>
         <div className="flex gap-2 mb-3">
@@ -241,9 +279,14 @@ export default function GastosPage() {
           <button
             onClick={saveRentalRate}
             disabled={savingRate || !dailyRate}
-            className="px-4 py-2 bg-taxi-primary text-white text-sm font-medium rounded-lg"
+            className="px-4 py-2 bg-taxi-primary text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
           >
-            {savingRate ? "..." : "Salvar"}
+            {savingRate ? (
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : "Salvar"}
           </button>
         </div>
         {rentalRate && (
@@ -273,7 +316,21 @@ export default function GastosPage() {
       </div>
 
       {loading ? (
-        <p className="text-center text-taxi-gray-500">Carregando...</p>
+        <div className="space-y-2">
+          <ExpenseCardSkeleton />
+          <ExpenseCardSkeleton />
+          <ExpenseCardSkeleton />
+        </div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-3">{error}</p>
+          <button
+            onClick={() => { setLoading(true); fetchExpenses(); fetchFuelEntries() }}
+            className="px-4 py-2 bg-taxi-primary text-white rounded-xl text-sm"
+          >
+            Tentar novamente
+          </button>
+        </div>
       ) : expenses.length === 0 && fuelEntries.length === 0 ? (
         <p className="text-center text-taxi-gray-500 py-8">
           Nenhum gasto registrado este mês.
@@ -336,7 +393,7 @@ export default function GastosPage() {
                     <button
                       onClick={saveEdit}
                       disabled={editLoading}
-                      className="flex-1 py-2 bg-taxi-success text-white text-sm font-medium rounded-lg"
+                      className="flex-1 py-2 bg-taxi-success text-white text-sm font-medium rounded-lg disabled:opacity-50"
                     >
                       {editLoading ? "Salvando..." : "Salvar"}
                     </button>
@@ -376,6 +433,7 @@ export default function GastosPage() {
                       <button
                         onClick={() => startEdit(expense)}
                         className="p-2 text-taxi-gray-500 hover:text-taxi-primary"
+                        aria-label={`Editar gasto ${categoryLabels[expense.category] || expense.category}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -384,6 +442,7 @@ export default function GastosPage() {
                       <button
                         onClick={() => deleteExpense(expense.id)}
                         className="p-2 text-taxi-gray-500 hover:text-red-500"
+                        aria-label={`Excluir gasto ${categoryLabels[expense.category] || expense.category}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

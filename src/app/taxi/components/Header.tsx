@@ -2,12 +2,22 @@
 
 import { useState } from "react"
 import { useAuth } from "../lib/auth-context"
+import { useToast } from "../lib/toast-context"
 import { NotificationBadge } from "./NotificationBadge"
 import { NotificationsList } from "./NotificationsList"
 
 export function Header() {
   const { user, signOut } = useAuth()
+  const { showToast } = useToast()
   const [showNotifications, setShowNotifications] = useState(false)
+
+  async function handleSignOut() {
+    try {
+      await signOut()
+    } catch {
+      showToast("Erro ao sair", "error")
+    }
+  }
 
   return (
     <>
@@ -22,14 +32,16 @@ export function Header() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShowNotifications(true)}
-              className="relative text-taxi-gray-500 hover:text-taxi-gray-900"
+              className="relative text-taxi-gray-500 hover:text-taxi-gray-900 p-1"
+              aria-label="Notificações"
             >
               🔔
               <NotificationBadge />
             </button>
             <button
-              onClick={signOut}
+              onClick={handleSignOut}
               className="text-sm text-taxi-gray-500 dark:text-gray-400 hover:text-taxi-gray-900 dark:hover:text-white"
+              aria-label="Sair da conta"
             >
               Sair
             </button>

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
+import { useToast } from "../lib/toast-context"
 import type { RideCategory, RideType } from "../lib/types"
 
 interface RideFormProps {
@@ -11,6 +12,7 @@ interface RideFormProps {
 
 export function RideForm({ onSuccess }: RideFormProps) {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [type, setType] = useState<RideType>("own")
   const [category, setCategory] = useState<RideCategory>("app")
   const [carType, setCarType] = useState<"executivo" | "taxi">("executivo")
@@ -60,7 +62,10 @@ export function RideForm({ onSuccess }: RideFormProps) {
 
     setLoading(false)
 
-    if (!error) {
+    if (error) {
+      showToast("Erro ao salvar corrida", "error")
+    } else {
+      showToast("Corrida salva!", "success")
       onSuccess()
       resetForm()
     }
@@ -93,7 +98,8 @@ export function RideForm({ onSuccess }: RideFormProps) {
             setType("own")
             setCategory("app")
           }}
-          className={`flex-1 py-2 rounded-lg ${
+          aria-pressed={type === "own"}
+          className={`flex-1 py-2 rounded-lg transition-colors ${
             type === "own" ? "bg-taxi-primary text-white" : "bg-white border border-taxi-gray-200"
           }`}
         >
@@ -105,7 +111,8 @@ export function RideForm({ onSuccess }: RideFormProps) {
             setType("passed")
             setCategory("private")
           }}
-          className={`flex-1 py-2 rounded-lg ${
+          aria-pressed={type === "passed"}
+          className={`flex-1 py-2 rounded-lg transition-colors ${
             type === "passed" ? "bg-taxi-primary text-white" : "bg-white border border-taxi-gray-200"
           }`}
         >
@@ -118,7 +125,8 @@ export function RideForm({ onSuccess }: RideFormProps) {
           <button
             type="button"
             onClick={() => setCarType("executivo")}
-            className={`flex-1 py-2 rounded-lg ${
+            aria-pressed={carType === "executivo"}
+            className={`flex-1 py-2 rounded-lg transition-colors ${
               carType === "executivo" ? "bg-taxi-success text-white" : "bg-white border border-taxi-gray-200"
             }`}
           >
@@ -127,7 +135,8 @@ export function RideForm({ onSuccess }: RideFormProps) {
           <button
             type="button"
             onClick={() => setCarType("taxi")}
-            className={`flex-1 py-2 rounded-lg ${
+            aria-pressed={carType === "taxi"}
+            className={`flex-1 py-2 rounded-lg transition-colors ${
               carType === "taxi" ? "bg-taxi-success text-white" : "bg-white border border-taxi-gray-200"
             }`}
           >
@@ -283,9 +292,17 @@ export function RideForm({ onSuccess }: RideFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50"
+        className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? "Salvando..." : "Salvar"}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Salvando...
+          </span>
+        ) : "Salvar"}
       </button>
     </form>
   )

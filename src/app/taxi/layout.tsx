@@ -3,6 +3,7 @@
 import { Inter } from "next/font/google"
 import { AuthProvider, useAuth } from "./lib/auth-context"
 import { ThemeProvider } from "./lib/theme-context"
+import { ToastProvider } from "./lib/toast-context"
 import { Header } from "./components/Header"
 import { BottomNav } from "./components/BottomNav"
 import { useRouter, usePathname } from "next/navigation"
@@ -47,7 +48,11 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-taxi-gray-500">Carregando...</p>
+        <div className="space-y-3 w-48">
+          <div className="h-4 bg-taxi-gray-200 rounded animate-pulse" />
+          <div className="h-3 bg-taxi-gray-200 rounded w-3/4 animate-pulse" />
+          <div className="h-3 bg-taxi-gray-200 rounded w-1/2 animate-pulse" />
+        </div>
       </div>
     )
   }
@@ -107,7 +112,9 @@ export default function TaxiLayout({
       <body className="font-inter bg-white dark:bg-gray-900 text-taxi-gray-900 dark:text-gray-100 antialiased transition-colors">
         <ThemeProvider>
           <AuthProvider>
-            <AuthGuard>{children}</AuthGuard>
+            <ToastProvider>
+              <AuthGuard>{children}</AuthGuard>
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

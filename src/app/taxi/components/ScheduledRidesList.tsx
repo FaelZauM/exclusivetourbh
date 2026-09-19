@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
+import { useToast } from "../lib/toast-context"
 import type { ScheduledRide } from "../lib/types"
 
 interface ScheduledRidesListProps {
@@ -11,8 +12,10 @@ interface ScheduledRidesListProps {
 
 export function ScheduledRidesList({ refreshKey }: ScheduledRidesListProps) {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [rides, setRides] = useState<ScheduledRide[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (user) fetchScheduledRides()
@@ -22,24 +25,41 @@ export function ScheduledRidesList({ refreshKey }: ScheduledRidesListProps) {
     if (!user) return
 
     setLoading(true)
-    const { data } = await getSupabase()
-      .from("scheduled_rides")
-      .select("*")
-      .eq("user_id", user.id)
-      .in("status", ["scheduled", "notified"])
-      .order("scheduled_date", { ascending: true })
+    try {
+      const { data, error } = await getSupabase()
+        .from("scheduled_rides")
+        .select("*")
+        .eq("user_id", user.id)
+        .in("status", ["scheduled", "notified"])
+        .order("scheduled_date", { ascending: true })
 
-    setRides(data || [])
-    setLoading(false)
+      if (error) throw error
+      setRides(data || [])
+      setError(null)
+    } catch {
+      setError("Erro ao carregar agendamentos")
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleCancel(id: string) {
     if (!confirm("Cancelar este agendamento?")) return
-    await getSupabase()
+
+    const prev = rides
+    setRides((r) => r.filter((x) => x.id !== id))
+
+    const { error } = await getSupabase()
       .from("scheduled_rides")
       .update({ status: "cancelled" })
       .eq("id", id)
-    fetchScheduledRides()
+
+    if (error) {
+      setRides(prev)
+      showToast("Erro ao cancelar agendamento", "error")
+    } else {
+      showToast("Agendamento cancelado", "success")
+    }
   }
 
   function formatDate(dateStr: string) {
@@ -59,7 +79,41 @@ export function ScheduledRidesList({ refreshKey }: ScheduledRidesListProps) {
   }
 
   if (loading) {
-    return <p className="text-center text-taxi-gray-500 py-4">Carregando agendamentos...</p>
+    return (
+      <div className="mb-6">
+        <h3 className="font-semibold mb-3">Agendamentos</h3>
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="p-3 bg-white border border-taxi-gray-200 rounded-xl animate-pulse">
+              <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-32" />
+                  <div className="h-3 bg-gray-200 rounded w-24" />
+                </div>
+                <div className="h-3 bg-gray-200 rounded w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mb-6">
+        <h3 className="font-semibold mb-3">Agendamentos</h3>
+        <div className="text-center py-4">
+          <p className="text-red-500 text-sm mb-2">{error}</p>
+          <button
+            onClick={fetchScheduledRides}
+            className="text-sm text-taxi-primary"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (rides.length === 0) {
@@ -95,6 +149,7 @@ export function ScheduledRidesList({ refreshKey }: ScheduledRidesListProps) {
               <button
                 onClick={() => handleCancel(ride.id)}
                 className="text-xs text-red-500 hover:text-red-700"
+                aria-label={`Cancelar agendamento de ${ride.passenger_name || ride.category}`}
               >
                 Cancelar
               </button>

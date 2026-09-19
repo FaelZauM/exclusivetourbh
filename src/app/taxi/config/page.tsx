@@ -4,13 +4,15 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useAuth } from "../lib/auth-context"
 import { useTheme } from "../lib/theme-context"
+import { useToast } from "../lib/toast-context"
 import { getSupabase } from "../lib/supabase"
 import { ExportModal } from "../components/ExportModal"
-import type { Ride, Expense, Fuel, User } from "../lib/types"
+import type { Ride, Expense, User } from "../lib/types"
 
 export default function SettingsPage() {
   const { user, signOut, refreshUser } = useAuth()
   const { isDark, toggleTheme } = useTheme()
+  const { showToast } = useToast()
   const [nome, setNome] = useState(user?.nome || "")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -56,15 +58,22 @@ export default function SettingsPage() {
     setLoading(true)
     setSuccess(false)
 
-    await getSupabase()
-      .from("users")
-      .update({ nome })
-      .eq("id", user.id)
+    try {
+      const { error } = await getSupabase()
+        .from("users")
+        .update({ nome })
+        .eq("id", user.id)
 
-    await refreshUser()
+      if (error) throw error
 
-    setLoading(false)
-    setSuccess(true)
+      await refreshUser()
+      setSuccess(true)
+      showToast("Perfil atualizado!", "success")
+    } catch {
+      showToast("Erro ao atualizar perfil", "error")
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleSaveGoals(e: React.FormEvent) {
@@ -72,57 +81,78 @@ export default function SettingsPage() {
     setGoalsLoading(true)
     setGoalsSuccess(false)
 
-    const { data } = await getSupabase()
-      .from("goals")
-      .select("id")
-      .limit(1)
-      .single()
+    try {
+      const { data } = await getSupabase()
+        .from("goals")
+        .select("id")
+        .limit(1)
+        .single()
 
-    if (data) {
-      await getSupabase()
-        .from("goals")
-        .update({
-          daily_goal: parseFloat(dailyGoal),
-          weekly_goal: parseFloat(weeklyGoal),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", data.id)
-    } else {
-      await getSupabase()
-        .from("goals")
-        .insert({
-          daily_goal: parseFloat(dailyGoal),
-          weekly_goal: parseFloat(weeklyGoal),
-        })
+      if (data) {
+        const { error } = await getSupabase()
+          .from("goals")
+          .update({
+            daily_goal: parseFloat(dailyGoal),
+            weekly_goal: parseFloat(weeklyGoal),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", data.id)
+        if (error) throw error
+      } else {
+        const { error } = await getSupabase()
+          .from("goals")
+          .insert({
+            daily_goal: parseFloat(dailyGoal),
+            weekly_goal: parseFloat(weeklyGoal),
+          })
+        if (error) throw error
+      }
+
+      setGoalsSuccess(true)
+      showToast("Metas atualizadas!", "success")
+    } catch {
+      showToast("Erro ao salvar metas", "error")
+    } finally {
+      setGoalsLoading(false)
     }
-
-    setGoalsLoading(false)
-    setGoalsSuccess(true)
   }
 
   async function fetchAllData() {
     if (!user) return
     setLoadingExport(true)
 
-    const { data: ridesData } = await getSupabase()
-      .from("rides")
-      .select("*")
-      .eq("user_id", user.id)
+    try {
+      const { data: ridesData } = await getSupabase()
+        .from("rides")
+        .select("*")
+        .eq("user_id", user.id)
 
-    const { data: expensesData } = await getSupabase()
-      .from("expenses")
-      .select("*")
-      .eq("user_id", user.id)
+      const { data: expensesData } = await getSupabase()
+        .from("expenses")
+        .select("*")
+        .eq("user_id", user.id)
 
-    const { data: usersData } = await getSupabase()
-      .from("users")
-      .select("*")
+      const { data: usersData } = await getSupabase()
+        .from("users")
+        .select("*")
 
-    setAllRides(ridesData || [])
-    setAllExpenses(expensesData || [])
-    setAllUsers(usersData || [])
-    setLoadingExport(false)
-    setShowExportModal(true)
+      setAllRides(ridesData || [])
+      setAllExpenses(expensesData || [])
+      setAllUsers(usersData || [])
+      setShowExportModal(true)
+    } catch {
+      showToast("Erro ao carregar dados para exportação", "error")
+    } finally {
+      setLoadingExport(false)
+    }
+  }
+
+  async function handleSignOut() {
+    try {
+      await signOut()
+    } catch {
+      showToast("Erro ao sair", "error")
+    }
   }
 
   return (
@@ -157,13 +187,20 @@ export default function SettingsPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50"
+          className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Salvando..." : "Salvar"}
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Salvando...
+            </span>
+          ) : "Salvar"}
         </button>
       </form>
 
-      {/* Dark Mode Toggle */}
       <div className="mt-6 p-4 bg-taxi-gray-50 dark:bg-gray-800 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
@@ -174,6 +211,9 @@ export default function SettingsPage() {
           </div>
           <button
             onClick={toggleTheme}
+            role="switch"
+            aria-checked={isDark}
+            aria-label="Alternar modo escuro"
             className={`relative w-12 h-6 rounded-full transition-colors ${
               isDark ? "bg-taxi-primary" : "bg-taxi-gray-300"
             }`}
@@ -222,9 +262,17 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={goalsLoading}
-              className="w-full py-3 bg-taxi-success text-white font-medium rounded-xl hover:bg-opacity-90 disabled:opacity-50"
+              className="w-full py-3 bg-taxi-success text-white font-medium rounded-xl hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {goalsLoading ? "Salvando..." : "Salvar Metas"}
+              {goalsLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Salvando...
+                </span>
+              ) : "Salvar Metas"}
             </button>
           </form>
         </div>
@@ -239,9 +287,17 @@ export default function SettingsPage() {
           <button
             onClick={fetchAllData}
             disabled={loadingExport}
-            className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50"
+            className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loadingExport ? "Carregando..." : "📄 Exportar Relatório"}
+            {loadingExport ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Carregando...
+              </span>
+            ) : "📄 Exportar Relatório"}
           </button>
         </div>
 
@@ -252,8 +308,8 @@ export default function SettingsPage() {
           📩 Convites
         </Link>
         <button
-          onClick={signOut}
-          className="w-full py-3 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600"
+          onClick={handleSignOut}
+          className="w-full py-3 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition-colors"
         >
           Sair
         </button>

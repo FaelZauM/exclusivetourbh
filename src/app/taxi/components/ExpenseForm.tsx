@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
+import { useToast } from "../lib/toast-context"
 
 interface ExpenseFormProps {
   onSuccess: () => void
@@ -20,6 +21,7 @@ const categories: { value: ExpenseCategory; label: string; icon: string }[] = [
 
 export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [category, setCategory] = useState<ExpenseCategory>("fuel")
   const [value, setValue] = useState("")
   const [pricePerLiter, setPricePerLiter] = useState("")
@@ -33,35 +35,36 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
     setLoading(true)
 
+    let result
     if (category === "fuel") {
       const totalVal = parseFloat(value)
       const priceVal = pricePerLiter ? parseFloat(pricePerLiter) : null
       const litersVal = priceVal && totalVal ? totalVal / priceVal : null
-      const { error } = await getSupabase().from("expenses").insert({
+      result = await getSupabase().from("expenses").insert({
         user_id: user.id,
         category: "fuel",
         value: totalVal,
         description: pricePerLiter ? `${litersVal?.toFixed(2)}L @ R$${pricePerLiter}/L` : null,
         expense_date: new Date(expenseDate + "T12:00:00").toISOString(),
       })
-      setLoading(false)
-      if (!error) {
-        onSuccess()
-        resetForm()
-      }
     } else {
-      const { error } = await getSupabase().from("expenses").insert({
+      result = await getSupabase().from("expenses").insert({
         user_id: user.id,
         category,
         value: parseFloat(value),
         description: description || null,
         expense_date: new Date(expenseDate + "T12:00:00").toISOString(),
       })
-      setLoading(false)
-      if (!error) {
-        onSuccess()
-        resetForm()
-      }
+    }
+
+    setLoading(false)
+
+    if (result.error) {
+      showToast("Erro ao salvar gasto", "error")
+    } else {
+      showToast("Gasto salvo!", "success")
+      onSuccess()
+      resetForm()
     }
   }
 
@@ -85,6 +88,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
               key={cat.value}
               type="button"
               onClick={() => setCategory(cat.value)}
+              aria-pressed={category === cat.value}
               className={`flex flex-col items-center p-3 rounded-xl transition-colors ${
                 category === cat.value
                   ? "bg-taxi-primary text-white"
@@ -154,9 +158,17 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50"
+        className="w-full py-3 bg-taxi-primary text-white font-medium rounded-xl hover:bg-taxi-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? "Salvando..." : "Salvar"}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Salvando...
+          </span>
+        ) : "Salvar"}
       </button>
     </form>
   )
