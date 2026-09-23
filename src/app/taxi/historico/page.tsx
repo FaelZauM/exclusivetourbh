@@ -266,8 +266,7 @@ export default function HistoricoPage() {
     if (ride.type === "passed" && ride.commission) {
       if (ride.added_by_admin) {
         if (ride.received_with_client) return ride.value
-        if (ride.user_id === user?.id) return ride.commission
-        return ride.value - ride.commission
+        return ride.commission
       }
       if (ride.user_id === user?.id) return ride.value - ride.commission
       return ride.commission
@@ -277,8 +276,8 @@ export default function HistoricoPage() {
 
   function getRepassedValue(ride: Ride): number {
     if (ride.type === "passed" && ride.commission) {
-      if (ride.added_by_admin && ride.user_id !== user?.id) {
-        return 0
+      if (ride.added_by_admin && !ride.received_with_client) {
+        return ride.value - ride.commission
       }
       if (ride.user_id === user?.id) {
         return ride.commission
@@ -852,10 +851,14 @@ export default function HistoricoPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-taxi-success">R$ {getEarnings(ride).toFixed(2)}</p>
-                          {ride.commission && !ride.received_with_client && !(ride.added_by_admin && ride.user_id !== user?.id) && (
-                            <p className="text-xs text-taxi-gray-500">
-                              Total: R$ {ride.value.toFixed(2)}
-                            </p>
+                          {ride.type === "passed" && ride.commission && !ride.received_with_client && (
+                            <div className="text-xs text-taxi-gray-500">
+                              <p>Total: R$ {ride.value.toFixed(2)}</p>
+                              {ride.added_by_admin && (
+                                <p>Repassou: R$ {(ride.value - ride.commission).toFixed(2)}</p>
+                              )}
+                              <p>Comissão: R$ {ride.commission.toFixed(2)}</p>
+                            </div>
                           )}
                           {repassed > 0 && (
                             <p className="text-xs text-taxi-orange font-medium">

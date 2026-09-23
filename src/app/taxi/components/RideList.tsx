@@ -44,6 +44,9 @@ export function RideList({ rides, onDelete, onRefresh, currentUserId, drivers = 
 
   function getEarnings(ride: Ride): number {
     if (ride.type === "passed" && ride.commission) {
+      if (ride.added_by_admin) {
+        return ride.value - ride.commission
+      }
       return ride.commission
     }
     return ride.value
@@ -252,10 +255,14 @@ export function RideList({ rides, onDelete, onRefresh, currentUserId, drivers = 
               <p className="font-bold text-taxi-success">
                 R$ {getEarnings(ride).toFixed(2)}
               </p>
-              {ride.type === "passed" && ride.commission && !ride.added_by_admin && (
-                <p className="text-xs text-taxi-gray-500">
-                  Total: R$ {ride.value.toFixed(2)} | Motorista: R$ {ride.commission.toFixed(2)}
-                </p>
+              {ride.type === "passed" && ride.commission && !ride.received_with_client && (
+                <div className="text-xs text-taxi-gray-500">
+                  <p>Total: R$ {ride.value.toFixed(2)}</p>
+                  {ride.added_by_admin && (
+                    <p>Repassou: R$ {(ride.value - ride.commission).toFixed(2)}</p>
+                  )}
+                  <p>Comissão: R$ {ride.commission.toFixed(2)}</p>
+                </div>
               )}
               <div className="flex gap-2 mt-2 justify-end">
                 <button
