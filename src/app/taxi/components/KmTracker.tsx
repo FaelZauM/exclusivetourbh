@@ -28,17 +28,25 @@ export function KmTracker({ onSuccess }: KmTrackerProps) {
     const today = new Date().toISOString().split("T")[0]
 
     const { data } = await getSupabase()
-      .from("km_tracking")
-      .select("id, km_start, km_end")
+      .from("expenses")
+      .select("id, description")
       .eq("user_id", user.id)
-      .eq("tracking_date", today)
+      .eq("category", "km_tracking")
+      .gte("expense_date", today)
+      .lt("expense_date", today + "T23:59:59")
       .limit(1)
       .single()
 
     if (data) {
       setTodayKmId(data.id)
-      setKmStart(data.km_start?.toString() || "")
-      setKmEnd(data.km_end?.toString() || "")
+      try {
+        const desc = JSON.parse(data.description || "{}")
+        setKmStart(desc.km_start?.toString() || "")
+        setKmEnd(desc.km_end?.toString() || "")
+      } catch {
+        setKmStart("")
+        setKmEnd("")
+      }
     } else {
       setTodayKmId(null)
       setKmStart("")
@@ -56,23 +64,27 @@ export function KmTracker({ onSuccess }: KmTrackerProps) {
     const today = new Date().toISOString().split("T")[0]
     const kmStartVal = kmStart ? parseFloat(kmStart) : null
     const kmEndVal = kmEnd ? parseFloat(kmEnd) : null
+    const total = kmStartVal && kmEndVal ? kmEndVal - kmStartVal : 0
+
+    const desc = JSON.stringify({ km_start: kmStartVal, km_end: kmEndVal, total })
 
     try {
       if (todayKmId) {
         const { error } = await getSupabase()
-          .from("km_tracking")
-          .update({ km_start: kmStartVal, km_end: kmEndVal })
+          .from("expenses")
+          .update({ description: desc })
           .eq("id", todayKmId)
 
         if (error) throw error
       } else {
         const { data, error } = await getSupabase()
-          .from("km_tracking")
+          .from("expenses")
           .insert({
             user_id: user.id,
-            tracking_date: today,
-            km_start: kmStartVal,
-            km_end: kmEndVal,
+            category: "km_tracking",
+            description: desc,
+            amount: 0,
+            expense_date: today,
           })
           .select("id")
           .single()
