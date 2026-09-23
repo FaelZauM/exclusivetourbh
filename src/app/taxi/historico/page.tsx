@@ -275,9 +275,9 @@ export default function HistoricoPage() {
   }
 
   function getRepassedValue(ride: Ride): number {
-    if (ride.type === "passed" && ride.commission) {
-      if (ride.added_by_admin && !ride.received_with_client) {
-        return ride.value - ride.commission
+    if (ride.type === "passed" && ride.commission && ride.received_with_client) {
+      if (ride.added_by_admin) {
+        return ride.commission
       }
       if (ride.user_id === user?.id) {
         return ride.commission
