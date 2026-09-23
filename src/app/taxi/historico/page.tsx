@@ -266,7 +266,7 @@ export default function HistoricoPage() {
     if (ride.type === "passed" && ride.commission) {
       if (ride.added_by_admin) {
         if (ride.received_with_client) return ride.value
-        return ride.commission
+        return ride.value - ride.commission
       }
       if (ride.user_id === user?.id) return ride.value - ride.commission
       return ride.commission
@@ -855,7 +855,7 @@ export default function HistoricoPage() {
                             <div className="text-xs text-taxi-gray-500">
                               <p>Total: R$ {ride.value.toFixed(2)}</p>
                               {ride.added_by_admin && (
-                                <p>Repassou: R$ {(ride.value - ride.commission).toFixed(2)}</p>
+                                <p>Repassou: R$ {ride.commission.toFixed(2)}</p>
                               )}
                             </div>
                           )}

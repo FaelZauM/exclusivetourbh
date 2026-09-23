@@ -155,7 +155,7 @@ export default function RidesPage() {
   function getAdminCommission(ride: Ride): number {
     if (ride.received_with_client) return 0
     if (ride.type === "passed" && ride.commission) {
-      return ride.commission
+      return ride.value - ride.commission
     }
     return 0
   }
