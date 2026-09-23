@@ -26,8 +26,6 @@ export interface Ride {
   received_with_client?: boolean
   paid_to_driver?: boolean
   added_by_admin?: boolean
-  source?: "app" | "notion"
-  notion_id?: string
 }
 
 export interface Fuel {
@@ -40,8 +38,6 @@ export interface Fuel {
   km_start?: number
   km_end?: number
   created_at: string
-  source?: "app" | "notion"
-  notion_id?: string
 }
 
 export interface FuelPrice {

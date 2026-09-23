@@ -35,11 +35,11 @@ export default function DevPage() {
     if (!user || user.role !== "developer") return
 
     const [usersRes, ridesRes, expensesRes, fuelRes, rentalRatesRes] = await Promise.all([
-      getSupabase().from("users").select("*").order("created_at", { ascending: false }),
-      getSupabase().from("rides").select("*").order("ride_date", { ascending: false }).limit(200),
-      getSupabase().from("expenses").select("*").order("expense_date", { ascending: false }).limit(200),
-      getSupabase().from("fuel").select("*").order("fuel_date", { ascending: false }).limit(200),
-      getSupabase().from("rental_rates").select("*").order("created_at", { ascending: false }),
+      getSupabase().from("users").select("id,nome,email,role,status,created_at").order("created_at", { ascending: false }),
+      getSupabase().from("rides").select("id,user_id,value,commission,ride_date,category,type,added_by_admin,passenger_name,company_name,created_at").order("ride_date", { ascending: false }).limit(200),
+      getSupabase().from("expenses").select("id,user_id,value,category,expense_date,created_at").order("expense_date", { ascending: false }).limit(200),
+      getSupabase().from("fuel").select("id,user_id,total_value,fuel_date,created_at").order("fuel_date", { ascending: false }).limit(200),
+      getSupabase().from("rental_rates").select("id,user_id,daily_rate,month,year,created_at").order("created_at", { ascending: false }),
     ])
 
     const usersList = usersRes.data || []

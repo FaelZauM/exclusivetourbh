@@ -25,47 +25,43 @@ export default function GoalsPage() {
   async function fetchData() {
     if (!user) return
 
-    const { data: goalsData } = await getSupabase()
-      .from("goals")
-      .select("*")
-      .limit(1)
-      .single()
-
-    setGoals(goalsData)
-
-    const { data: driverGoalData } = await getSupabase()
-      .from("driver_goals")
-      .select("*")
-      .eq("user_id", user.id)
-      .limit(1)
-
-    if (driverGoalData && driverGoalData.length > 0) {
-      setDriverGoal(driverGoalData[0])
-    }
-
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-
-    const { data: todayRides } = await getSupabase()
-      .from("rides")
-      .select("value")
-      .eq("user_id", user.id)
-      .eq("type", "own")
-      .gte("ride_date", today.toISOString())
-
-    const todayTotal = todayRides?.reduce((sum, ride) => sum + ride.value, 0) || 0
-    setTodayEarnings(todayTotal)
 
     const weekStart = new Date()
     weekStart.setDate(weekStart.getDate() - weekStart.getDay())
     weekStart.setHours(0, 0, 0, 0)
 
-    const { data: weekRides } = await getSupabase()
-      .from("rides")
-      .select("value")
-      .eq("user_id", user.id)
-      .eq("type", "own")
-      .gte("ride_date", weekStart.toISOString())
+    const [
+      { data: goalsData },
+      { data: driverGoalData },
+      { data: todayRides },
+      { data: weekRides },
+    ] = await Promise.all([
+      getSupabase().from("goals").select("*").limit(1).single(),
+      getSupabase().from("driver_goals").select("*").eq("user_id", user.id).limit(1),
+      getSupabase()
+        .from("rides")
+        .select("value")
+        .eq("user_id", user.id)
+        .eq("type", "own")
+        .gte("ride_date", today.toISOString()),
+      getSupabase()
+        .from("rides")
+        .select("value")
+        .eq("user_id", user.id)
+        .eq("type", "own")
+        .gte("ride_date", weekStart.toISOString()),
+    ])
+
+    setGoals(goalsData)
+
+    if (driverGoalData && driverGoalData.length > 0) {
+      setDriverGoal(driverGoalData[0])
+    }
+
+    const todayTotal = todayRides?.reduce((sum, ride) => sum + ride.value, 0) || 0
+    setTodayEarnings(todayTotal)
 
     const weekTotal = weekRides?.reduce((sum, ride) => sum + ride.value, 0) || 0
     setWeekEarnings(weekTotal)

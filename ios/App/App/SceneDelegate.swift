@@ -10,6 +10,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         window?.rootViewController = CAPBridgeViewController()
         window?.makeKeyAndVisible()
+        window?.rootViewController?.view.frame = windowScene.screen.bounds
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }

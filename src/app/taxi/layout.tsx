@@ -35,11 +35,23 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!user) return
     
     // Check immediately
-    checkAndSendNotifications()
+    checkAndSendNotifications().then(result => {
+      if (result.errors.length > 0) {
+        console.warn("Notification check errors:", result.errors)
+      }
+    }).catch(err => {
+      console.error("Notification check failed:", err)
+    })
     
     // Check every 5 minutes
     const interval = setInterval(() => {
-      checkAndSendNotifications()
+    checkAndSendNotifications().then(result => {
+      if (result.errors.length > 0) {
+        console.warn("Notification check errors:", result.errors)
+      }
+    }).catch(err => {
+      console.error("Notification check failed:", err)
+    })
     }, 5 * 60 * 1000)
     
     return () => clearInterval(interval)
@@ -85,7 +97,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="min-h-screen pb-16 max-w-lg mx-auto bg-white dark:bg-gray-900">
+      <div className="h-16 bg-black" />
       {!isPublicPage && <Header />}
       {children}
       {!isPublicPage && <BottomNav />}
@@ -99,6 +112,7 @@ export default function TaxiLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable}`} suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <script dangerouslySetInnerHTML={{
           __html: `
             try {

@@ -122,19 +122,11 @@ export default function SettingsPage() {
     setLoadingExport(true)
 
     try {
-      const { data: ridesData } = await getSupabase()
-        .from("rides")
-        .select("*")
-        .eq("user_id", user.id)
-
-      const { data: expensesData } = await getSupabase()
-        .from("expenses")
-        .select("*")
-        .eq("user_id", user.id)
-
-      const { data: usersData } = await getSupabase()
-        .from("users")
-        .select("*")
+      const [{ data: ridesData }, { data: expensesData }, { data: usersData }] = await Promise.all([
+        getSupabase().from("rides").select("*").eq("user_id", user.id),
+        getSupabase().from("expenses").select("*").eq("user_id", user.id),
+        getSupabase().from("users").select("*"),
+      ])
 
       setAllRides(ridesData || [])
       setAllExpenses(expensesData || [])

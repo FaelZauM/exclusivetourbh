@@ -21,10 +21,12 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-taxi-gray-200 dark:border-gray-700 px-4 py-3 z-50">
+      <header className="bg-white dark:bg-gray-900 border-b border-taxi-gray-200 dark:border-gray-700 px-4 py-3 z-50">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-bold text-lg dark:text-white">ExclusivePro</h1>
+            <h1 className="font-bold text-lg dark:text-white">
+              Ex<span className="text-sm align-super text-taxi-primary">x</span>Pro
+            </h1>
             {user && (
               <p className="text-xs text-taxi-gray-500 dark:text-gray-400">{user.nome}</p>
             )}

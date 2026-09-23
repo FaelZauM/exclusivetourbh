@@ -70,35 +70,32 @@ export default function AluguelPage() {
   async function fetchData() {
     if (!user) return
 
+    // Parallel: cars + drivers + invitations
     let carsQuery = getSupabase()
       .from("driver_cars")
-      .select("*")
+      .select("id,owner_id,driver_id,car_model,license_plate,car_type,active,created_at")
       .eq("active", true)
 
-    if (user.role === "admin") {
-      // Admin sees all cars
-    } else {
+    if (user.role !== "admin") {
       carsQuery = carsQuery.eq("driver_id", user.id)
     }
 
-    const { data: carsData } = await carsQuery
+    const [carsResult, driversResult, invitationsResult] = await Promise.all([
+      carsQuery,
+      getSupabase()
+        .from("users")
+        .select("id,nome,email,role,created_at")
+        .eq("role", "driver"),
+      getSupabase()
+        .from("driver_invitations")
+        .select("id,email,status,created_at")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false }),
+    ])
 
-    setMyCars(carsData || [])
-
-    const { data: driversData } = await getSupabase()
-      .from("users")
-      .select("*")
-      .eq("role", "driver")
-
-    setDrivers(driversData || [])
-
-    const { data: invitationsData } = await getSupabase()
-      .from("driver_invitations")
-      .select("*")
-      .eq("owner_id", user.id)
-      .order("created_at", { ascending: false })
-
-    setInvitations(invitationsData || [])
+    setMyCars(carsResult.data || [])
+    setDrivers(driversResult.data || [])
+    setInvitations(invitationsResult.data || [])
     setLoading(false)
   }
 

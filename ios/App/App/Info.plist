@@ -66,5 +66,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>UIStatusBarHidden</key>
+	<false/>
+	<key>UIWindowSceneStatusBarManagerRole</key>
+	<dict>
+		<key>UIStatusBarStyle</key>
+		<string>UIStatusBarStyleLightContent</string>
+		<key>UIStatusBarHidden</key>
+		<false/>
+	</dict>
 </dict>
 </plist>

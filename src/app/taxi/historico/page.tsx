@@ -50,10 +50,13 @@ export default function HistoricoPage() {
 
   useEffect(() => {
     if (user) {
-      fetchRides()
-      fetchGoals()
-      fetchExpenses()
-      fetchRentalRates()
+      // Parallel: all independent fetches
+      Promise.all([
+        fetchRides(),
+        fetchGoals(),
+        fetchExpenses(),
+        fetchRentalRates(),
+      ])
     }
   }, [user, selectedMonth, selectedYear])
 
@@ -121,32 +124,47 @@ export default function HistoricoPage() {
     setLoading(true)
     const startDate = new Date(selectedYear, selectedMonth - 1, 1)
     const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59)
+    const startStr = startDate.toISOString()
+    const endStr = endDate.toISOString()
 
-    const { data: myRides } = await getSupabase()
-      .from("rides")
-      .select("*")
-      .eq("user_id", user.id)
-      .gte("ride_date", startDate.toISOString())
-      .lte("ride_date", endDate.toISOString())
-      .order("ride_date", { ascending: false })
-
-    let allRides = myRides || []
+    const rideCols = "id,user_id,type,category,car_type,value,commission,driver_name,passenger_name,company_name,start_location,end_location,ride_date,added_by_admin,received_with_client,paid_to_driver,source,created_at"
 
     if (user.role === "admin") {
-      const { data: carsData } = await getSupabase()
-        .from("driver_cars")
-        .select("driver_id")
-        .eq("owner_id", user.id)
-        .eq("active", true)
+      // Parallel: my rides + cars + fuel
+      const [myRidesResult, carsResult, fuelResult] = await Promise.all([
+        getSupabase()
+          .from("rides")
+          .select(rideCols)
+          .eq("user_id", user.id)
+          .gte("ride_date", startStr)
+          .lte("ride_date", endStr)
+          .order("ride_date", { ascending: false }),
+        getSupabase()
+          .from("driver_cars")
+          .select("driver_id")
+          .eq("owner_id", user.id)
+          .eq("active", true),
+        getSupabase()
+          .from("fuel")
+          .select("id,user_id,fuel_date,total_value,liters,created_at")
+          .eq("user_id", user.id)
+          .gte("fuel_date", startStr)
+          .lte("fuel_date", endStr)
+          .order("fuel_date", { ascending: false }),
+      ])
 
+      let allRides = myRidesResult.data || []
+      setFuelExpenses(fuelResult.data || [])
+
+      const carsData = carsResult.data
       if (carsData && carsData.length > 0) {
         const driverIds = carsData.map((c) => c.driver_id)
         const { data: driverRides } = await getSupabase()
           .from("rides")
-          .select("*")
+          .select(rideCols)
           .in("user_id", driverIds)
-          .gte("ride_date", startDate.toISOString())
-          .lte("ride_date", endDate.toISOString())
+          .gte("ride_date", startStr)
+          .lte("ride_date", endStr)
           .order("ride_date", { ascending: false })
 
         if (driverRides) {
@@ -154,23 +172,24 @@ export default function HistoricoPage() {
         }
       }
 
-      const { data: fuel } = await getSupabase()
-        .from("fuel")
-        .select("*")
+      allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
+      setRides(allRides)
+    } else {
+      const { data: myRides } = await getSupabase()
+        .from("rides")
+        .select(rideCols)
         .eq("user_id", user.id)
-        .gte("fuel_date", startDate.toISOString())
-        .lte("fuel_date", endDate.toISOString())
-        .order("fuel_date", { ascending: false })
+        .gte("ride_date", startStr)
+        .lte("ride_date", endStr)
+        .order("ride_date", { ascending: false })
 
-      setFuelExpenses(fuel || [])
+      setRides(myRides || [])
     }
 
-    allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
-    setRides(allRides)
-
+    // Fetch drivers for name display (only once per month change)
     const { data: driversData } = await getSupabase()
       .from("users")
-      .select("*")
+      .select("id,nome,email,role,created_at")
       .neq("role", "admin")
 
     setDrivers(driversData || [])
@@ -790,11 +809,6 @@ export default function HistoricoPage() {
                                   : "bg-yellow-100 text-yellow-800"
                               }`}>
                                 {ride.car_type === "executivo" ? "Executivo" : "Táxi"}
-                              </span>
-                            )}
-                            {ride.source === "notion" && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                                📱 Notion
                               </span>
                             )}
                             {ride.type === "passed" && ride.user_id === "9012b3cf-8899-4771-8785-5e9543becb14" && (

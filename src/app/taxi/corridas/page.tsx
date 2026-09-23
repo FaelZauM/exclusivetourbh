@@ -8,10 +8,8 @@ import { RideForm } from "../components/RideForm"
 import { RideList } from "../components/RideList"
 import { ProgressBar } from "../components/ProgressBar"
 import { KmTracker } from "../components/KmTracker"
-import { ScheduledRideForm } from "../components/ScheduledRideForm"
-import { ScheduledRidesList } from "../components/ScheduledRidesList"
 import { ListSkeleton, StatsSkeleton } from "../components/Skeleton"
-import type { Ride, User, Goal, DriverGoal } from "../lib/types"
+import type { Ride, User } from "../lib/types"
 
 export default function RidesPage() {
   const { user } = useAuth()
@@ -21,7 +19,6 @@ export default function RidesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [dailyGoal, setDailyGoal] = useState(200)
-  const [refreshKey, setRefreshKey] = useState(0)
 
   const fetchRides = useCallback(async () => {
     if (!user) return
@@ -32,63 +29,94 @@ export default function RidesPage() {
       const tomorrow = new Date(today)
       tomorrow.setDate(tomorrow.getDate() + 1)
 
-      let allRides: Ride[] = []
+      const todayStr = today.toISOString()
+      const tomorrowStr = tomorrow.toISOString()
 
       if (user.role === "admin") {
-        const { data: myRides, error: myErr } = await getSupabase()
-          .from("rides")
-          .select("*")
-          .eq("user_id", user.id)
-          .gte("ride_date", today.toISOString())
-          .lt("ride_date", tomorrow.toISOString())
-          .order("ride_date", { ascending: false })
+        // Batch: fetch cars + my rides + goals in parallel
+        const [carsResult, myRidesResult, goalResult] = await Promise.all([
+          getSupabase()
+            .from("driver_cars")
+            .select("driver_id")
+            .eq("owner_id", user.id)
+            .eq("active", true),
+          getSupabase()
+            .from("rides")
+            .select("id,user_id,type,category,car_type,value,commission,driver_name,passenger_name,company_name,ride_date,added_by_admin,received_with_client,paid_to_driver,created_at")
+            .eq("user_id", user.id)
+            .gte("ride_date", todayStr)
+            .lt("ride_date", tomorrowStr)
+            .order("ride_date", { ascending: false }),
+          user.role === "admin"
+            ? getSupabase().from("goals").select("daily_goal").limit(1).single()
+            : getSupabase().from("driver_goals").select("personal_goal").eq("user_id", user.id).single(),
+        ])
 
-        if (myErr) throw myErr
-        allRides = myRides || []
+        if (myRidesResult.error) throw myRidesResult.error
 
-        const { data: carsData } = await getSupabase()
-          .from("driver_cars")
-          .select("driver_id")
-          .eq("owner_id", user.id)
-          .eq("active", true)
+        let allRides: Ride[] = myRidesResult.data || []
 
+        const carsData = carsResult.data
+        if (goalResult.data) {
+          if (user.role === "admin") {
+            setDailyGoal((goalResult.data as { daily_goal: number }).daily_goal)
+          } else {
+            setDailyGoal((goalResult.data as { personal_goal: number }).personal_goal)
+          }
+        }
+
+        // If admin has drivers, fetch their rides + names in parallel
         if (carsData && carsData.length > 0) {
           const driverIds = carsData.map((c) => c.driver_id)
 
-          const { data: driversData } = await getSupabase()
-            .from("users")
-            .select("*")
-            .in("id", driverIds)
+          const [driversResult, driverRidesResult] = await Promise.all([
+            getSupabase()
+              .from("users")
+              .select("id,nome,email,role,created_at")
+              .in("id", driverIds),
+            getSupabase()
+              .from("rides")
+              .select("id,user_id,type,category,car_type,value,commission,driver_name,passenger_name,company_name,ride_date,added_by_admin,received_with_client,paid_to_driver,created_at")
+              .in("user_id", driverIds)
+              .gte("ride_date", todayStr)
+              .lt("ride_date", tomorrowStr)
+              .order("ride_date", { ascending: false }),
+          ])
 
-          setDrivers(driversData || [])
+          setDrivers(driversResult.data || [])
 
-          const { data: driverRides } = await getSupabase()
-            .from("rides")
-            .select("*")
-            .in("user_id", driverIds)
-            .gte("ride_date", today.toISOString())
-            .lt("ride_date", tomorrow.toISOString())
-            .order("ride_date", { ascending: false })
-
-          if (driverRides) {
-            allRides = [...allRides, ...driverRides]
+          if (driverRidesResult.data) {
+            allRides = [...allRides, ...driverRidesResult.data]
           }
+        } else {
+          setDrivers([])
         }
+
+        allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
+        setRides(allRides)
       } else {
-        const { data: myRides, error: myErr } = await getSupabase()
+        // Non-admin: single query
+        const { data, error } = await getSupabase()
           .from("rides")
-          .select("*")
+          .select("id,user_id,type,category,car_type,value,commission,driver_name,passenger_name,company_name,ride_date,added_by_admin,received_with_client,paid_to_driver,created_at")
           .eq("user_id", user.id)
-          .gte("ride_date", today.toISOString())
-          .lt("ride_date", tomorrow.toISOString())
+          .gte("ride_date", todayStr)
+          .lt("ride_date", tomorrowStr)
           .order("ride_date", { ascending: false })
 
-        if (myErr) throw myErr
-        allRides = myRides || []
+        if (error) throw error
+        setRides(data || [])
+
+        // Fetch personal goal
+        const { data: goalData } = await getSupabase()
+          .from("driver_goals")
+          .select("personal_goal")
+          .eq("user_id", user.id)
+          .single()
+
+        if (goalData) setDailyGoal(goalData.personal_goal)
       }
 
-      allRides.sort((a, b) => new Date(b.ride_date).getTime() - new Date(a.ride_date).getTime())
-      setRides(allRides)
       setError(null)
     } catch (err) {
       setError("Erro ao carregar corridas")
@@ -98,41 +126,11 @@ export default function RidesPage() {
     }
   }, [user, showToast])
 
-  const fetchGoal = useCallback(async () => {
-    if (!user) return
-
-    try {
-      if (user.role === "admin") {
-        const { data } = await getSupabase()
-          .from("goals")
-          .select("*")
-          .limit(1)
-          .single()
-
-        if (data) setDailyGoal(data.daily_goal)
-      } else {
-        const { data } = await getSupabase()
-          .from("driver_goals")
-          .select("*")
-          .eq("user_id", user.id)
-          .single()
-
-        if (data) setDailyGoal(data.personal_goal)
-      }
-    } catch {
-      // Silent fail for goals
-    }
-  }, [user])
-
   useEffect(() => {
-    if (user) {
-      fetchRides()
-      fetchGoal()
-    }
-  }, [user, fetchRides, fetchGoal])
+    if (user) fetchRides()
+  }, [user, fetchRides])
 
   async function handleDelete(id: string) {
-    // Optimistic remove
     const prev = rides
     setRides((r) => r.filter((x) => x.id !== id))
 
@@ -203,14 +201,6 @@ export default function RidesPage() {
 
       <div className="mb-6">
         <KmTracker />
-      </div>
-
-      <ScheduledRidesList refreshKey={refreshKey} />
-
-      <div className="mb-6">
-        <ScheduledRideForm 
-          onSuccess={() => setRefreshKey(k => k + 1)} 
-        />
       </div>
 
       <RideForm onSuccess={fetchRides} />

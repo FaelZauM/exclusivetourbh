@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "../lib/auth-context"
 import { useToast } from "../lib/toast-context"
-import { getUserNotifications, markNotificationRead, markAllAsRead } from "../lib/notification-service"
+import { getUserNotifications, markNotificationRead, markAllNotificationsRead } from "../lib/notification-service"
 import type { Notification } from "../lib/types"
 
 interface NotificationsListProps {
@@ -62,7 +62,7 @@ export function NotificationsList({ isOpen, onClose }: NotificationsListProps) {
   async function handleMarkAllRead() {
     if (!user) return
     try {
-      await markAllAsRead(user.id)
+      await markAllNotificationsRead(user.id)
       setNotifications(notifications.map(n => ({ ...n, read: true })))
       showToast("Todas marcadas como lidas", "success")
     } catch {

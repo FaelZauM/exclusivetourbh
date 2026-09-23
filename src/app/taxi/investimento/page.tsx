@@ -25,10 +25,13 @@ export default function InvestmentPage() {
   async function fetchData() {
     if (!user) return
 
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString()
+
     const { data: rides } = await getSupabase()
       .from("rides")
       .select("value")
       .eq("user_id", user.id)
+      .gte("ride_date", startOfYear)
       .eq("type", "own")
 
     const total = rides?.reduce((sum, ride) => sum + ride.value * 0.1, 0) || 0

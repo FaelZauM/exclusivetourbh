@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
+import { useToast } from "../lib/toast-context"
 import type { DriverInvitation, User } from "../lib/types"
 
 export default function ConvitesPage() {
@@ -10,6 +11,7 @@ export default function ConvitesPage() {
   const [invitations, setInvitations] = useState<DriverInvitation[]>([])
   const [owners, setOwners] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (user) {
@@ -42,21 +44,29 @@ export default function ConvitesPage() {
   }
 
   async function handleAcceptInvitation(invitationId: string) {
-    // Update invitation status
-    await getSupabase()
-      .from("driver_invitations")
-      .update({ status: "accepted" })
-      .eq("id", invitationId)
+    if (!user) return
 
-    // Update user role from "user" to "driver"
-    if (user) {
-      await getSupabase()
+    try {
+      const { error: inviteError } = await getSupabase()
+        .from("driver_invitations")
+        .update({ status: "accepted" })
+        .eq("id", invitationId)
+
+      if (inviteError) throw new Error(`Failed to accept invitation: ${inviteError.message}`)
+
+      const { error: roleError } = await getSupabase()
         .from("users")
         .update({ role: "driver" })
         .eq("id", user.id)
-    }
 
-    fetchInvitations()
+      if (roleError) throw new Error(`Failed to update role: ${roleError.message}`)
+
+      showToast("Convite aceito! Voce agora e um motorista.", "success")
+      fetchInvitations()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao aceitar convite"
+      showToast(msg, "error")
+    }
   }
 
   async function handleRejectInvitation(invitationId: string) {

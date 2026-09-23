@@ -33,25 +33,60 @@ export default function GastosPage() {
   const [dailyRate, setDailyRate] = useState("")
   const [savingRate, setSavingRate] = useState(false)
 
-  const fetchExpenses = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     if (!user) return
 
     try {
       const now = new Date()
       const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
       const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+      const month = now.getMonth() + 1
+      const year = now.getFullYear()
 
-      const { data, error } = await getSupabase()
-        .from("expenses")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("expense_date", startDate.toISOString())
-        .lte("expense_date", endDate.toISOString())
-        .order("expense_date", { ascending: false })
+      const expCols = "id,user_id,category,description,value,expense_date,created_at"
 
-      if (error) throw error
-      setExpenses(data || [])
+      // Parallel: all expenses + rental rate
+      const [expensesResult, rateResult] = await Promise.all([
+        getSupabase()
+          .from("expenses")
+          .select(expCols)
+          .eq("user_id", user.id)
+          .gte("expense_date", startDate.toISOString())
+          .lte("expense_date", endDate.toISOString())
+          .order("expense_date", { ascending: false }),
+        getSupabase()
+          .from("rental_rates")
+          .select("id,user_id,daily_rate,month,year,created_at")
+          .eq("user_id", user.id)
+          .eq("month", month)
+          .eq("year", year)
+          .limit(1),
+      ])
+
+      if (expensesResult.error) throw expensesResult.error
+
+      // Split fuel vs other client-side
+      const allData = expensesResult.data || []
+      setExpenses(allData.filter(e => e.category !== "fuel"))
+      setFuelEntries(
+        allData.filter(e => e.category === "fuel").map(e => ({
+          id: e.id,
+          user_id: e.user_id,
+          fuel_date: e.expense_date,
+          total_value: e.value,
+          liters: null,
+          price_per_liter: null,
+        }))
+      )
       setError(null)
+
+      if (rateResult.data && rateResult.data.length > 0) {
+        setRentalRate(rateResult.data[0])
+        setDailyRate(rateResult.data[0].daily_rate.toString())
+      } else {
+        setRentalRate(null)
+        setDailyRate("")
+      }
     } catch {
       setError("Erro ao carregar gastos")
       showToast("Erro ao carregar gastos", "error")
@@ -60,71 +95,9 @@ export default function GastosPage() {
     }
   }, [user, showToast])
 
-  const fetchFuelEntries = useCallback(async () => {
-    if (!user) return
-
-    try {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, "0")
-      const prefix = `${year}-${month}`
-
-      const { data } = await getSupabase()
-        .from("expenses")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("category", "fuel")
-        .like("expense_date", `${prefix}%`)
-        .order("expense_date", { ascending: false })
-
-      setFuelEntries((data || []).map(e => ({
-        id: e.id,
-        user_id: e.user_id,
-        fuel_date: e.expense_date,
-        total_value: e.value,
-        liters: null,
-        price_per_liter: null,
-      })))
-    } catch {
-      // Silent fail for fuel entries
-    }
-  }, [user])
-
-  const fetchRentalRate = useCallback(async () => {
-    if (!user) return
-
-    try {
-      const now = new Date()
-      const month = now.getMonth() + 1
-      const year = now.getFullYear()
-
-      const { data } = await getSupabase()
-        .from("rental_rates")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("month", month)
-        .eq("year", year)
-        .limit(1)
-
-      if (data && data.length > 0) {
-        setRentalRate(data[0])
-        setDailyRate(data[0].daily_rate.toString())
-      } else {
-        setRentalRate(null)
-        setDailyRate("")
-      }
-    } catch {
-      // Silent fail for rental rate
-    }
-  }, [user])
-
   useEffect(() => {
-    if (user) {
-      fetchExpenses()
-      fetchFuelEntries()
-      fetchRentalRate()
-    }
-  }, [user, fetchExpenses, fetchFuelEntries, fetchRentalRate])
+    if (user) fetchAll()
+  }, [user, fetchAll])
 
   async function saveRentalRate() {
     if (!user || !dailyRate) return
@@ -209,7 +182,7 @@ export default function GastosPage() {
     } else {
       showToast("Gasto atualizado!", "success")
       setEditingExpense(null)
-      fetchExpenses()
+      fetchAll()
     }
   }
 
@@ -312,7 +285,7 @@ export default function GastosPage() {
       </div>
 
       <div className="mb-6">
-        <ExpenseForm onSuccess={() => { fetchExpenses(); fetchFuelEntries() }} />
+        <ExpenseForm onSuccess={fetchAll} />
       </div>
 
       {loading ? (
@@ -325,7 +298,7 @@ export default function GastosPage() {
         <div className="text-center py-8">
           <p className="text-red-500 mb-3">{error}</p>
           <button
-            onClick={() => { setLoading(true); fetchExpenses(); fetchFuelEntries() }}
+            onClick={() => { setLoading(true); fetchAll() }}
             className="px-4 py-2 bg-taxi-primary text-white rounded-xl text-sm"
           >
             Tentar novamente
