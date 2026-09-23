@@ -25,7 +25,7 @@ export function Header() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-bold text-lg dark:text-white">
-              E<span className="text-sm align-super text-taxi-primary">x</span>Pro
+              E<span className="text-sm align-super text-taxi-primary">x</span> Pro
             </h1>
             {user && (
               <p className="text-xs text-taxi-gray-500 dark:text-gray-400">{user.nome}</p>
