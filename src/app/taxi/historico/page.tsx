@@ -860,11 +860,6 @@ export default function HistoricoPage() {
                               <p>Comissão: R$ {ride.commission.toFixed(2)}</p>
                             </div>
                           )}
-                          {repassed > 0 && (
-                            <p className="text-xs text-taxi-orange font-medium">
-                              Repassou: R$ {repassed.toFixed(2)}
-                            </p>
-                          )}
                           <div className="flex gap-1 mt-2 justify-end">
                             <button
                               onClick={() => startEdit(ride)}
