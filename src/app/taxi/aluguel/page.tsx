@@ -4,8 +4,6 @@ import { useState, useEffect } from "react"
 import { getSupabase } from "../lib/supabase"
 import { useAuth } from "../lib/auth-context"
 import { ProgressBar } from "../components/ProgressBar"
-import { ScheduledRideForm } from "../components/ScheduledRideForm"
-import { ScheduledRidesList } from "../components/ScheduledRidesList"
 import type { User, DriverCar, RentalGoal, Ride } from "../lib/types"
 
 export default function AluguelPage() {
@@ -608,19 +606,6 @@ export default function AluguelPage() {
                   </button>
                 </form>
               </div>
-
-              {user?.role === "admin" && (
-                <>
-                  <ScheduledRidesList refreshKey={refreshKey} />
-
-                  <div className="mb-6">
-                    <ScheduledRideForm
-                      type="passed"
-                      onSuccess={() => setRefreshKey(k => k + 1)}
-                    />
-                  </div>
-                </>
-              )}
 
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-3">
