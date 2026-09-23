@@ -334,8 +334,7 @@ export default function AluguelPage() {
     if (ride.type === "passed" && ride.commission) {
       if (ride.added_by_admin) {
         if (ride.received_with_client) return ride.value
-        if (ride.user_id === user?.id) return ride.commission
-        return ride.value - ride.commission
+        return ride.commission
       }
       if (ride.user_id === user?.id) return ride.value - ride.commission
       return ride.commission
@@ -689,7 +688,7 @@ export default function AluguelPage() {
                     </div>
                     {!rideReceivedWithClient && (
                       <div>
-                        <label className="block text-sm font-medium mb-1">Valor do Motorista (R$)</label>
+                        <label className="block text-sm font-medium mb-1">Minha Comissão (R$)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -699,7 +698,7 @@ export default function AluguelPage() {
                           required
                         />
                         <p className="text-xs text-taxi-gray-500 mt-1">
-                          Sua comissão: R$ {rideValue && rideCommission ? (parseFloat(rideValue) - parseFloat(rideCommission)).toFixed(2) : "0.00"}
+                          Motorista recebe: R$ {rideValue && rideCommission ? (parseFloat(rideValue) - parseFloat(rideCommission)).toFixed(2) : "0.00"}
                         </p>
                       </div>
                     )}
@@ -836,7 +835,7 @@ export default function AluguelPage() {
             </div>
             {editingRide.type === "passed" && (
               <div>
-                <label className="block text-sm font-medium mb-1">Valor do Motorista (R$)</label>
+                <label className="block text-sm font-medium mb-1">Minha Comissão (R$)</label>
                 <input
                   type="number"
                   step="0.01"

@@ -83,3 +83,171 @@
     animation: none;
   }
 }
+
+/* ===== DARK MODE GLOBAL RULES ===== */
+.dark body,
+.dark {
+  color-scheme: dark;
+}
+
+/* Cards, forms, modals */
+.dark .bg-white {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-taxi-gray-50 {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-taxi-gray-100 {
+  background-color: #374151 !important;
+}
+
+.dark .bg-taxi-gray-200 {
+  background-color: #374151 !important;
+}
+
+/* Inputs, selects, textareas */
+.dark input[type="text"],
+.dark input[type="number"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="date"],
+.dark input[type="time"],
+.dark select,
+.dark textarea {
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+  border-color: #374151 !important;
+}
+
+/* Text colors */
+.dark .text-taxi-gray-900 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-taxi-gray-700 {
+  color: #d1d5db !important;
+}
+
+.dark .text-taxi-gray-600 {
+  color: #d1d5db !important;
+}
+
+.dark .text-taxi-gray-500 {
+  color: #9ca3af !important;
+}
+
+.dark .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+/* Borders */
+.dark .border-taxi-gray-200 {
+  border-color: #374151 !important;
+}
+
+.dark .border-taxi-gray-300 {
+  border-color: #4b5563 !important;
+}
+
+.dark .border {
+  border-color: #374151 !important;
+}
+
+.dark .border-t {
+  border-color: #374151 !important;
+}
+
+.dark .border-b {
+  border-color: #374151 !important;
+}
+
+/* Badges */
+.dark .bg-purple-100 {
+  background-color: rgba(147, 51, 234, 0.2) !important;
+}
+
+.dark .text-purple-800 {
+  color: #c4b5fd !important;
+}
+
+.dark .bg-yellow-100 {
+  background-color: rgba(234, 179, 8, 0.2) !important;
+}
+
+.dark .text-yellow-800 {
+  color: #fde68a !important;
+}
+
+.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .text-blue-800 {
+  color: #93c5fd !important;
+}
+
+.dark .bg-green-100 {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+.dark .text-green-800 {
+  color: #86efac !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.dark .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Cancel/secondary buttons */
+.dark .bg-taxi-gray-300 {
+  background-color: #4b5563 !important;
+}
+
+/* Skeleton loading */
+.dark .bg-gray-100 {
+  background-color: #374151 !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: #4b5563 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #1f2937 !important;
+}
+
+/* Toast notifications */
+.dark .bg-red-600 {
+  background-color: #dc2626 !important;
+}
+
+.dark .bg-green-600 {
+  background-color: #16a34a !important;
+}
+
+.dark .bg-blue-600 {
+  background-color: #2563eb !important;
+}
+
+/* Orange accent borders */
+.dark .border-orange-200 {
+  border-color: rgba(251, 146, 60, 0.3) !important;
+}
