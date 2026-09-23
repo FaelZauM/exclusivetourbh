@@ -857,7 +857,6 @@ export default function HistoricoPage() {
                               {ride.added_by_admin && (
                                 <p>Repassou: R$ {(ride.value - ride.commission).toFixed(2)}</p>
                               )}
-                              <p>Comissão: R$ {ride.commission.toFixed(2)}</p>
                             </div>
                           )}
                           <div className="flex gap-1 mt-2 justify-end">
